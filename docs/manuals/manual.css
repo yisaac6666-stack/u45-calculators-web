@@ -1,0 +1,55 @@
+@font-face{font-family:"U45 Display";src:url("../../../fonts/Oxanium.woff") format("woff")}
+@font-face{font-family:"U45 Keys";src:url("../../../fonts/BarlowCondensed-SemiBold.woff") format("woff");font-weight:400 600}
+@font-face{font-family:"U45 Keys";src:url("../../../fonts/BarlowCondensed-Bold.woff") format("woff");font-weight:700 900}
+@font-face{font-family:"U45 Mono";src:url("../../../fonts/JetBrainsMono.woff") format("woff")}
+html{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+body{font-family:"U45 Keys",sans-serif;font-size:11.5pt;line-height:1.38;color:#000;margin:0}
+section{break-before:page}
+section:first-child{break-before:auto}
+h1{font-family:"U45 Display",sans-serif;font-size:19pt;margin:0 0 .4em;border-bottom:3px solid #000;padding-bottom:.15em}
+h2{font-family:"U45 Display",sans-serif;font-size:13.5pt;margin:1em 0 .3em;color:#0039CB}
+h3{font-size:12pt;margin:.7em 0 .2em}
+p{margin:.3em 0 .5em}
+.cover{text-align:center;padding-top:6mm}
+.brand{font-family:"U45 Display";font-size:30pt;font-weight:bold;letter-spacing:.06em;background:#000;color:#FFD600;padding:5mm;line-height:1.1}
+.ctitle{font-family:"U45 Display";font-size:20pt;margin-top:5mm}
+.cname{font-size:15pt;font-weight:700;margin-top:3mm}
+.cgroup{font-family:"U45 Mono";font-size:9pt;color:#333}
+.cimg{max-height:88mm;max-width:100%;margin-top:5mm}
+.cfoot{font-family:"U45 Mono";font-size:7.5pt;margin-top:4mm;color:#333}
+img.map{display:block;max-width:100%;max-height:150mm;margin:0 auto}
+img.qr{display:block;max-width:60%;max-height:70mm;margin:0 auto 3mm}
+.cap{text-align:center;font-family:"U45 Mono";font-size:8pt}
+.note{background:#FFD600;padding:2mm;border:2px solid #000}
+table{border-collapse:collapse;width:100%;font-size:10pt;margin:.3em 0 .8em}
+th{background:#000;color:#FFD600;text-align:left;padding:2px 4px}
+td{border:1px solid #888;padding:2px 4px;vertical-align:top}
+tr{break-inside:avoid}
+td.n{font-family:"U45 Mono";font-weight:bold;width:9mm}
+.sw{display:inline-block;font-family:"U45 Mono";font-size:7.5pt;padding:0 4px;border:1px solid #000;border-radius:3px}
+.kg-num{background:#fff;color:#000}.kg-op{background:#FFD600;color:#000}.kg-fn{background:#0039CB;color:#fff}.kg-mem{background:#00C853;color:#000}.kg-clr{background:#C00000;color:#fff}.kg-mod{background:#000;color:#00E5FF}
+.kc{display:inline-block;border:1.5px solid #000;border-radius:4px;padding:0 4px;margin:1px 0;background:#fff;white-space:nowrap;font-weight:600}
+.kc b{font-family:"U45 Mono";font-size:8.5pt;background:#000;color:#FFD600;padding:0 3px;border-radius:2px;margin-right:2px}
+.ar{color:#0039CB;font-weight:bold}
+.steps{line-height:1.9}
+.disp{font-family:"U45 Display";background:#d8e2cf;border:1px solid #000;padding:0 5px}
+.card{break-inside:avoid;border:2px solid #000;border-radius:5px;padding:2.5mm 3mm;margin:0 0 4mm}
+.ch{font-size:13pt;margin-bottom:1.5mm}
+.kn{font-family:"U45 Mono";background:#000;color:#FFD600;padding:0 5px;border-radius:3px}
+.kf{font-weight:800}
+.kl{margin:1mm 0}
+.ex{break-inside:avoid;border-left:5px solid #FFD600;padding:1mm 0 1mm 3mm;margin:0 0 5mm}
+.why{font-style:italic;color:#222}
+.tip{break-inside:avoid;border:2px solid #00C853;padding:1mm 3mm;margin:0 0 3.5mm;border-radius:4px}
+.tip.bad{border-color:#C00000}
+.st{font-family:"U45 Mono";font-size:7.5pt;padding:0 4px;border-radius:3px;border:1px solid #000}
+.st.live{background:#00C853}.st.ui{background:#FFD600}.st.plan{background:#C00000;color:#fff}
+ol.feat li{margin:0 0 2.2mm}
+ol.drill li{margin:0 0 3.4mm}
+.blank{font-family:"U45 Mono";color:#666}
+ol.ans li{margin:0 0 3mm;break-inside:avoid}
+ol.ans2{columns:2;font-family:"U45 Mono";font-size:9pt}
+kbd{font-family:"U45 Mono";border:1px solid #000;border-bottom-width:2px;border-radius:3px;padding:0 3px;font-size:8.5pt}
+dt{font-weight:800;margin-top:2mm}dd{margin:0 0 2mm 5mm}
+table.qrt td{font-size:8.5pt}
+.toc li{margin:1mm 0}
