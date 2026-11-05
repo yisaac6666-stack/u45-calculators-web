@@ -1,14 +1,6 @@
-/* U-45 accessibility overrides: ALL CAPS, max contrast (black on white), 18px base */
-html,body{font-size:18px!important;background:#fff!important;color:#000!important}
-*,*::before,*::after{text-transform:uppercase!important;color:#000!important;background-color:#fff!important;background-image:none!important;
-  border-color:#000!important;outline-color:#000!important;opacity:1!important;text-shadow:none!important;filter:none!important;-webkit-text-fill-color:#000!important}
+/* U-45 overrides: ALL CAPS + 18px minimum text; original design otherwise unchanged */
+*,*::before,*::after{text-transform:uppercase!important}
+html,body{font-size:max(18px,1em)}
 body *{font-size:max(18px,1em)!important}
-input,textarea,select,button,.key{border:2px solid #000!important}
-input::placeholder,textarea::placeholder{color:#000!important;opacity:1!important}
-.calc{--kfs:18px;--lfs:18px;--kh:44px;--key:#fff;--kt:#000;--knum:#fff;--knt:#000;--kop:#fff;--kopt:#000;--kfn:#fff;--kfnt:#000;--kdel:#fff;--kdelt:#000;--kshift:#fff;--kshiftt:#000;--kalpha:#fff;--kalphat:#000;--kexe:#fff;--kexet:#000;--lab:#000;--ls:#000;--la:#000;--lb:#000;--lcd:#fff;--lcdt:#000;--bezel:#fff;--pad:#fff}
-.calc .key{min-height:44px;height:auto!important;box-shadow:none!important}
-.screen{--son:#000;--soff:transparent}
-button,a,[role=button]{background:#fff!important}
-img,svg,canvas,video{background-color:transparent!important}
-:focus-visible{outline:3px solid #000!important;outline-offset:2px}
-html body .back.u45-back,html body .back,html body .back.home{background:#fff!important;color:#000!important;border:2px solid #000!important}
+/* calculator keys keep original sizing: 18px labels overflow the original key height */
+body .calc .key,body .calc .key *{font-size:revert-layer!important}
