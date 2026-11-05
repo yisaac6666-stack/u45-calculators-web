@@ -4,9 +4,18 @@ html,body{font-size:max(18px,1em)}
 body *{font-size:max(18px,1em)!important}
 /* calculator keys keep original sizing: 18px labels overflow the original key height */
 body .calc .key,body .calc .key *{font-size:revert-layer!important}
-/* About / SEO section: small, unobtrusive, matches the dark app theme */
-.u45-about{max-width:640px;margin:40px auto 24px;padding:16px 18px;color:#9aa0aa;background:transparent;border-top:1px solid #2a2d33;line-height:1.5;font-family:var(--f-display,system-ui,sans-serif)}
-.u45-about h2,.u45-about h3,.u45-about h4{color:#c9ced6;margin:14px 0 6px;font-weight:700}
-.u45-about strong{color:#c9ced6}
-.u45-about ul{padding-left:20px;margin:4px 0}
-.u45-about summary{cursor:pointer;color:#c9ced6}
+/* About / SEO section: max contrast white on black, two columns on wide screens */
+.u45-about{max-width:1100px;margin:40px auto 24px;padding:20px 24px;color:#fff;background:#000;border:2px solid #fff;line-height:1.55;font-family:var(--f-display,system-ui,sans-serif)}
+.u45-about *{color:#fff;opacity:1}
+.u45-about h2,.u45-about h3,.u45-about h4,.u45-about strong{color:#fff;font-weight:700}
+.u45-about h3{border-top:2px solid #fff;padding-top:14px;margin:22px 0 10px}
+.u45-about h4{margin:0 0 4px}
+.u45-about ol{padding-left:2.2em;margin:6px 0}
+.u45-about ul{list-style:disc;padding-left:1.4em;margin:4px 0}
+.u45-about li{margin:4px 0}
+.u45-about .u45-desc,.u45-about .u45-cols{column-count:2;column-gap:40px;column-rule:2px solid #fff}
+.u45-about .u45-desc>li,.u45-about .u45-cols>li{break-inside:avoid;margin-bottom:12px}
+.u45-about a{color:#ff0;text-decoration:underline}
+@media (max-width:639px){.u45-about{padding:14px;margin:24px 8px}.u45-about .u45-desc,.u45-about .u45-cols{column-count:1;column-rule:none}}
+.u45-about .u45-desc,.u45-about .u45-cols{padding-left:0}
+.u45-about .u45-desc>li,.u45-about .u45-cols>li{margin-left:2.2em}
