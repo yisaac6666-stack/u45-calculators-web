@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://yisaac6666-stack.github.io/u45-calculators-web/sitemap.xml
