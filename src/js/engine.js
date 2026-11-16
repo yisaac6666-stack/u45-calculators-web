@@ -728,6 +728,37 @@
     let s = p.toFixed(Math.min(20, Math.max(0, D - intDigits))); s = trimZeros(s);
     return { mant: neg + s, exp: null };
   }
+  // ---------------- Display-only thousands grouping ----------------
+  // groupDigits('-1199.10') -> '-1,199.10' ; '466704' -> '466,704' ; '1.5E12' unchanged ; '0.000012345' unchanged.
+  // Works on any display string: only stand-alone decimal numbers are grouped (integer part only, never the
+  // fraction digits or an exponent). Words that mix digits and letters (hex 20A0F, 1010b, x2, OCT405017, 32b),
+  // dates (12-31-1990, 2026-11-16) and times (08:07) are left alone. Idempotent. U+E000 marks a cursor position.
+  // Never use the result for calculation: it is for the screen only.
+  const GRP_CUR = '\uE000';
+  function groupWord(w, sep) {
+    const ci = w.indexOf(GRP_CUR); const c = ci < 0 ? w : w.replace(GRP_CUR, '');
+    const m = /^(\d+)(\.\d*)?((?:[Ee][-+]?\d*)?)$/.exec(c);
+    if (!m || m[1].length < 4) return w;
+    const g = m[1].replace(/\B(?=(\d{3})+(?!\d))/g, sep) + (m[2] || '') + (m[3] || '');
+    if (ci < 0) return g;
+    let n = 0, i = 0; for (; i < g.length && n < ci; i++) if (g[i] !== sep) n++;
+    if (g[i] === sep) i++;
+    return g.slice(0, i) + GRP_CUR + g.slice(i);
+  }
+  function groupDigits(s, sep) {
+    if (s == null) return s; s = String(s); sep = sep || ',';
+    if (!/\d{4}/.test(s.replace(/\uE000/g, ''))) return s;
+    const keep = []; // protected ranges: dates and clock times
+    const P = /(\d{1,2}[-\/.]\d{1,2}[-\/.]\d{4}|\d{4}[-\/.]\d{1,2}[-\/.]\d{1,2}|\d{1,2}:\d{2}(?::\d{2})?)(?![\d])/g; let pm;
+    while ((pm = P.exec(s))) keep.push([pm.index, pm.index + pm[0].length]);
+    return s.replace(/[0-9A-Za-z.\uE000]+/g, (w, at) => {
+      if (keep.some(([a, b]) => at < b && at + w.length > a)) return w;
+      // a run like 1.2.3 or one glued to a decimal point / digit on the left is not a plain number
+      const prev = at > 0 ? s[at - 1] : '';
+      if (prev === ',' && /\d/.test(s[at - 2] || '')) return w; // already grouped
+      return groupWord(w, sep);
+    });
+  }
   function trimZeros(s) { if (s.indexOf('.') < 0) return s; s = s.replace(/0+$/, ''); return s.replace(/\.$/, ''); }
   function fmtPlain(x, opt) { // string like 1.23E5 or 1.23×10^5 (ascii)
     if (isCx(x)) return fmtComplex(x, opt);
@@ -756,5 +787,5 @@
     return { d: sg * d, m, s, str: (sg < 0 ? '-' : '') + d + '°' + m + '°' + trimZeros(s.toFixed(2)) + '°' };
   }
 
-  return { HINT, CalcError, tokenize, parse, evaluate, evalNode, makeEnv, formatNumber, fmtPlain, fmtComplex, toFraction, exactForm, integrate, derivative, solve, polyRoots, solveLinear, stats, regression, tvmSolve, tvmEq, npv, irr, amort, csm, toBase, fromBase, toDMS, round15, isNum, isCx, isMat, toMat, math, FUNCS, trimZeros, gcd };
+  return { HINT, CalcError, tokenize, parse, evaluate, evalNode, makeEnv, formatNumber, fmtPlain, fmtComplex, toFraction, exactForm, integrate, derivative, solve, polyRoots, solveLinear, stats, regression, tvmSolve, tvmEq, npv, irr, amort, csm, toBase, fromBase, toDMS, round15, isNum, isCx, isMat, toMat, math, FUNCS, trimZeros, gcd, groupDigits };
 });

@@ -176,6 +176,10 @@
     const built = U.buildCalc(model, proxy);
     const app = new Cls(model, built.screen);
     current = app; window.__calc = app;
+    if (U.groupDisplay && typeof app.render === 'function') { // display-only thousands separators on every screen (466,704)
+      const render0 = app.render;
+      app.render = function () { const r = render0.apply(this, arguments); try { U.groupDisplay(this); } catch (e) { /* display nicety only */ } return r; };
+    }
     if (model.tape && app.setTapeEl) {
       const box = U.h('div', 'tapebox'); const tape = U.h('div', 'tape'); box.appendChild(tape);
       built.body.insertBefore(box, built.body.firstChild); app.setTapeEl(tape);

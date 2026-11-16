@@ -238,9 +238,10 @@
     render() {
       if (!this.on) { this.el.innerHTML = '<div class="segwrap off"></div>'; return; }
       const t = this.displayText(); const I = this.indicators(); const all = this.cfg.indicatorSet || ['SHIFT', '3rd', 'HYP', 'M', 'K', 'DEG', 'RAD', 'GRAD', 'SD', 'FIX', 'SCI', 'ENG', '( )', 'HEX', 'OCT', 'BIN', 'a b/c'];
-      const segText = t.main.replace(/┘/g, '_').replace(/°/g, "'");
+      const grp = this.base === 10 && !t.frac && !t.dms && !this.err && U.groupOn(); // display-only thousands commas (466,704.)
+      const segText = (grp ? U.groupText(t.main) : t.main).replace(/┘/g, '_').replace(/°/g, "'");
       this.el.innerHTML = `<div class="segwrap"><div class="ind">${all.map(x => `<span class="${I.includes(x) ? 'on' : 'off'}">${x}</span>`).join('')}</div>` +
-        `<div class="segrow">${this.label ? `<span class="seglab">${this.label}</span>` : ''}<span class="segmain">${U.segSVG(segText, this.cfg.digits + 1, { commas: this.cfg.commas })}</span>${this.cfg.expDigits ? `<span class="segexp">${U.segSVG(t.exp.replace('-', '-'), this.cfg.expDigits + 1)}</span>` : ''}</div></div>`;
+        `<div class="segrow">${this.label ? `<span class="seglab">${this.label}</span>` : ''}<span class="segmain">${U.segSVG(segText, this.cfg.digits + 1, { commas: grp || this.cfg.commas })}</span>${this.cfg.expDigits ? `<span class="segexp">${U.segSVG(t.exp.replace('-', '-'), this.cfg.expDigits + 1)}</span>` : ''}</div></div>`;
     }
   }
 
@@ -380,11 +381,12 @@
     render() {
       if (!this.on) { this.el.innerHTML = '<div class="segwrap off"></div>'; return; }
       const t = this.hideNum ? { main: '', exp: '' } : this.displayText(); const I = [];
+      const grp = !t.frac && !t.dms && !this.err && U.groupOn(); // display-only thousands commas (-1,199.10)
       if (this.s2) I.push('2ND'); if (this.inv) I.push('INV'); if (this.hyp) I.push('HYP'); if (this.cpt) I.push('COMPUTE'); if (this.ws && !this.ws.def.cpt && this.ws.name !== 'TVM') I.push('ENTER'); if (this.ws && (this.ws.def.toggle || this.ws.name === 'FORMAT')) I.push('SET'); if (this.ws) I.push('↑↓');
       if (this.tvm.BGN) I.push('BGN'); if (this.angle === 'rad') I.push('RAD'); if (this.mark === '*') I.push('*'); if (this.mark === '=') I.push('=');
       const all = ['2ND', 'INV', 'HYP', 'COMPUTE', 'ENTER', 'SET', '↑↓', 'DEL', 'INS', '*', '=', 'BGN', 'RAD'];
       this.el.innerHTML = `<div class="segwrap fin"><div class="ind">${all.map(x => `<span class="${I.includes(x) ? 'on' : 'off'}">${x}</span>`).join('')}</div>` +
-        `<div class="segrow"><span class="seglab">${this.label || ''}</span><span class="segmain">${U.segSVG(t.main, 10, { commas: false })}</span>${t.exp ? `<span class="segexp">${U.segSVG(t.exp, 3)}</span>` : ''}</div></div>`;
+        `<div class="segrow"><span class="seglab">${this.label || ''}</span><span class="segmain">${U.segSVG(grp ? U.groupText(t.main) : t.main, 10, { commas: grp })}</span>${t.exp ? `<span class="segexp">${U.segSVG(t.exp, 3)}</span>` : ''}</div></div>`;
     }
   }
   // keep label when typing in a worksheet

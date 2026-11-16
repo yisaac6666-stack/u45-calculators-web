@@ -215,7 +215,7 @@
       if (!(await confirmPin('Creating a backup'))) return;
       const data = {}; Object.keys(localStorage).filter(k => /^u45\.(settings|cust\.|lay|hide\.|cal$|hist\.|histk$|knum|kcol|fx\.cache|vmode)/.test(k)).forEach(k => { data[k] = localStorage.getItem(k); });
       const note = 'History is stored encrypted; a backup restores it only on a device that keeps the same key (u45.histk) — the key is included only if history uses the local key.';
-      const txt = JSON.stringify({ app: 'U-45 CALCULATORS', v: '1.5.2', created: new Date().toISOString(), note, data }, null, 1);
+      const txt = JSON.stringify({ app: 'U-45 CALCULATORS', v: '1.5.3', created: new Date().toISOString(), note, data }, null, 1);
       G.U45Guard.saveFile({ name: 'U45-backup-' + new Date().toISOString().slice(0, 10) + '.json', mime: 'application/json', data: new TextEncoder().encode(txt) }, 'download');
     });
     on('_restore', async () => { if (!(await confirmPin('Restoring a backup'))) return; const f = b.querySelector('.se-file'); f.onchange = async () => { try { const j = JSON.parse(await f.files[0].text()); let n = 0; Object.entries(j.data || {}).forEach(([k, v]) => { if (/^u45\./.test(k) && k !== 'u45.pin') { localStorage.setItem(k, v); n++; } }); msg.textContent = 'Restored ' + n + ' item(s). Reloading…'; setTimeout(() => location.reload(), 800); } catch (e) { msg.textContent = 'Not a valid backup: ' + e.message; } }; f.click(); });
@@ -225,7 +225,7 @@
     on('_privacy', () => { msg.innerHTML = 'No accounts, no analytics, no tracking. Everything stays on this device (history is AES-GCM encrypted). The network is used only to: update exchange rates (open.er-api.com or api.frankfurter.app) and, if you enable it, to download extra OCR languages (cdn.jsdelivr.net). Turn on <b>Offline mode</b> to block both.'; });
     on('_install', () => G.U45Guard.installApp());
     on('_share', () => G.U45Guard.shareApp());
-    on('_about', () => { msg.innerHTML = 'U-45 CALCULATORS v1.5.2 · 45 calculators · all data stays on this device · feature-strip panels: ' + Object.entries(counts()).map(([k, v]) => esc(k) + ' ' + v).join(', '); });
+    on('_about', () => { msg.innerHTML = 'U-45 CALCULATORS v1.5.3 · 45 calculators · all data stays on this device · feature-strip panels: ' + Object.entries(counts()).map(([k, v]) => esc(k) + ' ' + v).join(', '); });
   }
 
   // ================= history UI =================

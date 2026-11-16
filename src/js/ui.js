@@ -336,5 +336,31 @@
     return () => document.removeEventListener('keydown', handler);
   }
 
-  G.CalcUI = { h, k, sp, Editor, TPL, renderNatural, valueHTML, plainHTML, segSVG, buildCalc, attachKeyboard, stripTags, keyGroup, keyList, GROUP_NAMES, KBD };
+  // ---------- display-only thousands separators ----------
+  // Every calculator screen shows 466,704 instead of 466704. Values used for calculation are never touched:
+  // grouping runs on the rendered screen text only. Settings → Thousands separator = none turns it off.
+  function groupOn() { try { const P = G.U45Prefs; return !(P && P.cust && P.cust().thousands === 'none'); } catch (e) { return true; } }
+  function groupText(s) { return groupOn() ? E.groupDigits(s, ',') : s; }
+  // Text inside these never gets commas: annunciators/status bars, other-base readouts, bit views, explicit opt-outs.
+  const NO_GROUP = '.ind,.sx-ind,.ann,.sx-aux,.sx-bits,.nogrp,svg,style,script,canvas,input,textarea';
+  function baseMode(app) { return !!app && (app.mode === 'BASE' || (typeof app.base === 'number' && app.base !== 10) || !!(app.def && app.def.noGroup)); }
+  function groupDisplay(app, root) {
+    root = root || (app && [app.el, app.scr].find(x => x && x.nodeType === 1)); if (!root || !root.ownerDocument || baseMode(app) || !groupOn()) return;
+    const doc = root.ownerDocument; const tw = doc.createTreeWalker(root, 4 /* SHOW_TEXT */, {
+      acceptNode: (n) => (/\d{4}/.test(n.data) || (n.data && /\d/.test(n.data) && n.nextSibling && n.nextSibling.classList && n.nextSibling.classList.contains('cur'))) && !(n.parentElement && n.parentElement.closest(NO_GROUP)) ? 1 : 3,
+    });
+    const nodes = []; let n; while ((n = tw.nextNode())) nodes.push(n);
+    const done = new Set();
+    for (const t of nodes) {
+      if (done.has(t)) continue;
+      const cur = t.nextSibling, t2 = cur && cur.nextSibling;
+      if (cur && cur.nodeType === 1 && cur.classList.contains('cur') && !cur.firstChild && t2 && t2.nodeType === 3) { // number split by the edit cursor
+        const g = E.groupDigits(t.data + '\uE000' + t2.data, ','); const i = g.indexOf('\uE000');
+        if (i >= 0) { const a = g.slice(0, i), b = g.slice(i + 1); if (a !== t.data) t.data = a; if (b !== t2.data) t2.data = b; done.add(t2); continue; }
+      }
+      const g = E.groupDigits(t.data, ','); if (g !== t.data) t.data = g;
+    }
+  }
+
+  G.CalcUI = { h, k, sp, Editor, TPL, renderNatural, valueHTML, plainHTML, segSVG, buildCalc, attachKeyboard, stripTags, keyGroup, keyList, GROUP_NAMES, KBD, groupDisplay, groupText, groupOn };
 })(window);
