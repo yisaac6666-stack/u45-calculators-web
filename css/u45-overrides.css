@@ -19,3 +19,5 @@ body .calc .key,body .calc .key *{font-size:revert-layer!important}
 @media (max-width:639px){.u45-about{padding:14px;margin:24px 8px}.u45-about .u45-desc,.u45-about .u45-cols{column-count:1;column-rule:none}}
 .u45-about .u45-desc,.u45-about .u45-cols{padding-left:0}
 .u45-about .u45-desc>li,.u45-about .u45-cols>li{margin-left:2.2em}
+/* printing-desk tape: keep each printed line full height (the 18px text was squeezing lines into the fixed-height tape); the tape scrolls instead */
+.tape .tl{flex-shrink:0}
