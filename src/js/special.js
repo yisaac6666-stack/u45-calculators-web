@@ -180,7 +180,7 @@
       if (this.info) { if (/^(ac|exe|ok|del|exit|esc)$/.test(act)) this.info = null; return; }
       if (this.def.pre && this.def.pre(this, act, kd)) return;
       if (this.err) { this.err = null; if (/^(ac|del|left|right)$/.test(act)) { if (act === 'ac') this.buf.clear(); return; } }
-      if (this.pend) { const p = this.pend; this.pend = null; if (/^var:/.test(act)) return this.memOp(p, act.slice(4)); if (act === 'ac') return; }
+      if (this.pend) { const p = this.pend; this.pend = null; if (/^var:/.test(act)) return this.memOp(p, act.slice(4)); if (this.def.digitRegs && /^d\d$/.test(act)) return this.memOp(p, 'R' + act[1]); if (act === 'ac') return; }
       const A = this.def.acts && this.def.acts[act] && !(this.def.passHome && this.view === 'home' && this.def.passHome.includes(act)) ? this.def.acts[act] : null;
       if (A) return A(this, kd);
       return this.common(act, kd);
@@ -213,7 +213,7 @@
         case 'up': case 'down': return this.histNav(act === 'up' ? -1 : 1);
         case 'sto': this.pend = 'sto'; return;
         case 'rcl': this.pend = 'rcl'; return;
-        case 'mplus': case 'mminus': { const v = this.execute(true); const cur = this.vars.M || 0; this.vars.M = MX.add(cur, act === 'mplus' ? v : MX.unaryMinus(v)); this.msg = 'M=' + fmtAny(this.vars.M, this.fmt); return; }
+        case 'mplus': case 'mminus': { const v = this.buf.empty || this.fresh ? this.ans : this.execute(); /* evaluates the entry like '=' (it becomes Ans; the next digit starts a new entry) */ const cur = this.vars.M || 0; this.vars.M = MX.add(cur, act === 'mplus' ? v : MX.unaryMinus(v)); this.msg = 'M=' + fmtAny(this.vars.M, this.fmt); return; }
         case 'drg': case 'drgcycle': this.angle = this.angle === 'deg' ? 'rad' : this.angle === 'rad' ? 'gra' : 'deg'; this.msg = 'Angle: ' + this.angle.toUpperCase(); return;
         case 'mode': case 'setup': return this.setupMenu();
         case 'clearvar': this.vars = {}; this.msg = 'Variables cleared'; return;
@@ -223,7 +223,7 @@
       throw new Error('Key not used here');
     }
     memOp(p, name) {
-      if (p === 'sto') { this.vars[name] = this.ansVal(); this.msg = name + '=' + fmtAny(this.vars[name], this.fmt); return; }
+      if (p === 'sto') { this.vars[name] = this.buf.empty || this.fresh ? this.ansVal() : this.execute(); this.msg = name + '=' + fmtAny(this.vars[name], this.fmt); return; }
       if (p === 'rcl') { this.typeTok(name, name); return; }
     }
     ansVal() { return this.ans; }
@@ -497,6 +497,8 @@
         case 'zstd': this.win = Object.assign({ xmin: -10, xmax: 10, ymin: -10, ymax: 10, xscl: 1, yscl: 1 }, D.win || {}); this.view = 'graph'; return;
         case 'zsq': { const W = this.dims(); const cx = (this.win.xmin + this.win.xmax) / 2, hy = (this.win.ymax - this.win.ymin) / 2, hx = hy * W.w / W.h; this.win.xmin = cx - hx; this.win.xmax = cx + hx; this.view = 'graph'; return; }
         case 'tools': if (D.tools) { this.openMenu(D.toolsTitle || 'TOOLS', D.tools(this)); } return;
+        case 'tblset': return this.openForm('TABLE SETUP', [['start', 'Start', this.tbl.start], ['step', 'Step', this.tbl.step]], (S, v) => { S.tbl.start = v.start; S.tbl.step = v.step || 1; S.tbl.row = 0; S.view = 'table'; });
+        case 'sel': if (this.view !== 'edit') { this.view = 'edit'; this.msg = 'SEL turns the highlighted slot on/off'; return; } break;
       }
       if (this.view === 'home') return super.exec(act, kd);
       if (this.view === 'edit') return this.editKey(act, kd);

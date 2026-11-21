@@ -90,7 +90,10 @@
       else if (this.statOn && kd.st) a = kd.st[1];
       if (a === 'shift' || a === '2nd') { this.s2 = !this.s2; this.s3 = false; this.render(); return; }
       if (a === '3rd') { this.s3 = !this.s3; this.s2 = false; this.render(); return; }
+      // INV prefix (BA-style): INV SIN/COS/TAN = arc functions, INV LN = eˣ, INV yˣ = x-th root; any other key cancels it
+      if (this.inv && a !== 'inva' && a !== 'hyp') { const IV = { sin: 'asin', cos: 'acos', tan: 'atan', ln: 'epow', pow: 'root' }; if (IV[a]) a = IV[a]; this.inv = false; }
       const wasShift = this.s2 || this.s3; this.s2 = false; this.s3 = false;
+      if (!this.ws && this.label === 'n=' && !/^(data|sigplus|sigminus|hyp|inva)$/.test(a)) this.label = null; // the 'n=' tag belongs to the Σ+ count only
       if (!this.on && !['on', 'onac', 'ac', 'onoff', 'onc'].includes(a)) return;
       try {
         if (this.err && !['ac', 'onac', 'on', 'onoff', 'cec', 'sac', 'onc'].includes(a)) { this.render(); return; }
@@ -146,7 +149,7 @@
         case 'int': return this.unary(x => Math.trunc(x)); case 'frac': return this.unary(x => x - Math.trunc(x));
         case 'abs': return this.unary(x => Math.abs(x));
         case 'pct': return this.percent();
-        case 'swap': { this.commit(); if (this.swapVal != null) { const t = this.x; this.x = this.swapVal; this.swapVal = t; return; } const t = this.stack.length && !this.stack[this.stack.length - 1].par ? this.stack[this.stack.length - 1] : null; if (t) { const v = t.v; t.v = this.x; this.x = v; } return; }
+        case 'swap': if (this.statOn === 2) { this.commit(); this.pairPending = this.x; this.entry = null; this.computed = true; return; } /* STAT2: x⇄y separates x and y of a data pair */ { this.commit(); if (this.swapVal != null) { const t = this.x; this.x = this.swapVal; this.swapVal = t; return; } const t = this.stack.length && !this.stack[this.stack.length - 1].par ? this.stack[this.stack.length - 1] : null; if (t) { const v = t.v; t.v = this.x; this.x = v; } return; }
         case 'mr': case 'rcl': this.entry = null; this.x = this.M; this.computed = true; return;
         case 'min': case 'sto': this.commit(); this.M = this.x; this.computed = true; return;
         case 'xm': { this.commit(); const t = this.M; this.M = this.x; this.x = t; this.computed = true; return; }

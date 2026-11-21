@@ -35,7 +35,7 @@
     ['STACK2', [['DUP2', 'dup2'], ['DROP2', 'drop2'], ['NIP', 'nip'], ['UNROT', 'unrot'], ['ROLL', 'roll'], ['ROLLD', 'rolld']]],
     ['LIST', [['→LIST', 'tolist'], ['LIST→', 'listto'], ['ΣLIST', 'slist'], ['ΠLIST', 'plist'], ['SORT', 'sort'], ['REVLST', 'revlist']]],
     ['LIST2', [['SIZE', 'size'], ['GET', 'get'], ['HEAD', 'head'], ['TAIL', 'tail'], ['ΔLIST', 'dlist'], ['SEQ', 'seq']]],
-    ['VECT', [['DOT', 'dot'], ['CROSS', 'cross'], ['NORM', 'norm'], ['MEAN', 'mean'], ['MAX', 'lmax'], ['MIN', 'lmin']]],
+    ['VECT', [['DOT', 'vdot'], ['CROSS', 'cross'], ['NORM', 'norm'], ['MEAN', 'mean'], ['MAX', 'lmax'], ['MIN', 'lmin']]],
     ['PRG', [['REC', 'prg'], ['RUN', 'run'], ['VIEW', 'prgview'], ['VARS', 'vars'], ['PURGE', 'purge'], ['EVAL', 'eval']]],
   ];
   D.rpl = {
@@ -82,7 +82,7 @@
       head: (S) => S.unary(L => { if (!needList(L).length) throw new Error('Bad Argument Value'); return L[0]; }), tail: (S) => S.unary(L => asList(needList(L).slice(1))),
       dlist: (S) => S.unary(L => asList(needList(L).slice(1).map((v, i) => MX.subtract(v, L[i])))),
       seq: (S) => S.unary(n => { const k = nn(n); if (k < 0 || k > 10000) throw new Error('Bad Argument Value'); return asList(Array.from({ length: k }, (_, i) => i + 1)); }),
-      dot: (S) => S.binary((a, b) => MX.dot(needList(a), needList(b))), cross: (S) => S.binary((a, b) => MX.cross(needList(a), needList(b))),
+      vdot: (S) => S.binary((a, b) => MX.dot(needList(a), needList(b))), /* 'dot' stays the decimal point key */ cross: (S) => S.binary((a, b) => MX.cross(needList(a), needList(b))),
       norm: (S) => S.unary(v => isArr(v) ? MX.norm(v) : MX.abs(v)), mean: (S) => S.unary(L => MX.mean(needList(L))),
       lmax: (S) => S.unary(L => Math.max(...needList(L).map(nn))), lmin: (S) => S.unary(L => Math.min(...needList(L).map(nn))),
       sto: (S) => { S.endEntry(); if (isAlg(S.st[0]) && /^[A-Za-z][A-Za-z0-9]*$/.test(S.st[0].alg)) { S.need(2); S.snapshot(); const nm = S.st.shift().alg, v = S.st.shift(); S.vars[nm] = v; S.msg = 'Stored ' + nm; return; } S.pend = 'sto'; S.msg = 'STO: digit for R0–R9, or put a quoted name on level 1'; },
@@ -137,7 +137,7 @@
             A('7', 'd7', { c: 'num' }), A('8', 'd8', { c: 'num' }), A('9', 'd9', { c: 'num' }), A('÷', 'div', { c: 'op' }), A('DRG', 'drg', { c: 'sm', s: ['MODE', 'setup', 'Display format'] }),
             A('4', 'd4', { c: 'num' }), A('5', 'd5', { c: 'num' }), A('6', 'd6', { c: 'num' }), A('×', 'mul', { c: 'op' }), A('n!', 'fact', { c: 'sm', s: ['DEPTH', 'depth', 'Stack depth'] }),
             A('1', 'd1', { c: 'num' }), A('2', 'd2', { c: 'num' }), A('3', 'd3', { c: 'num' }), A('−', 'sub', { c: 'op' }), A('SPC', 'space', { c: 'sm', tip: 'Space separator', s: ['π', 'pi'] }),
-            A('0', 'd0', { c: 'num' }), A('.', 'dot', { c: 'num' }), A('DOT', 'dot', { c: 'sm', tip: 'Vector dot product' }), A('+', 'add', { c: 'op' }), A('CROSS', 'cross', { c: 'sm', tip: 'Vector cross product', s: ['NORM', 'norm', 'Vector length'] })] },
+            A('0', 'd0', { c: 'num' }), A('.', 'dot', { c: 'num' }), A('DOT', 'vdot', { c: 'sm', tip: 'Vector dot product' }), A('+', 'add', { c: 'op' }), A('CROSS', 'cross', { c: 'sm', tip: 'Vector cross product', s: ['NORM', 'norm', 'Vector length'] })] },
         ],
       };
     },

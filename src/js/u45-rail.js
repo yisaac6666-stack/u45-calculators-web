@@ -178,7 +178,7 @@
     ['lang', 'Language (rail & panel labels)', [['en', 'English'], ['fr', 'Français'], ['sw', 'Kiswahili'], ['lg', 'Luganda'], ['es', 'Español']]], ['precision', 'Display precision (significant digits)', [4, 15, 1]],
     ['fxAuto', 'Auto-update exchange rates', 'bool'], ['fxHours', 'Rate update interval (hours)', [1, 72, 1]], ['fxSource', 'Exchange-rate source', [['erapi', 'open.er-api.com (166 currencies)'], ['frankfurter', 'Frankfurter / ECB (≈30)']]],
     ['offline', 'Offline mode (never use the network)', 'bool'], ['_fxnow', 'Update exchange rates now', 'btn'], ['histOn', 'Save calculation history', 'bool'], ['histMax', 'History entries kept per calculator', [50, 5000, 50]], ['confirmDel', 'Confirm before deleting', 'bool'],
-    ['pinTimeout', 'Remember passcode for (minutes, 0 = ask every time)', [0, 30, 1]], ['_pin', 'Change passcode', 'btn'], ['_lock', 'Lock now (forget passcode)', 'btn'], ['wmText', 'Watermark text on exported images', 'text'], ['blockSave', 'Block right-click / drag / long-press image saving', 'bool'],
+    ['pinTimeout', 'Remember passcode for (minutes, 0 = ask every time)', [0, 30, 1]], ['_pin', 'Set or change passcode', 'btn'], ['_lock', 'Lock now (forget passcode)', 'btn'], ['wmText', 'Watermark text on exported images', 'text'], ['blockSave', 'Block right-click / drag / long-press image saving', 'bool'],
     ['ocrOnline', 'Camera Solve: allow online OCR languages', 'bool'], ['ocrLang', 'Camera Solve: default OCR language', [['eng', 'English (offline)'], ['fra', 'French'], ['deu', 'German'], ['spa', 'Spanish'], ['por', 'Portuguese'], ['swa', 'Swahili']]],
     ['reduceMotion', 'Reduce motion', 'bool'], ['railLabels', 'Feature-strip label size (labels always shown)', [['auto', 'Normal'], ['on', 'Large'], ['off', 'Compact']]], ['autoLayout', 'Auto layout = original calculator fit', 'bool'],
     ['clock24', '24-hour clock', 'bool'], ['weekStart', 'Week starts on', [[1, 'Monday'], [0, 'Sunday'], [6, 'Saturday']]], ['_backup', 'Backup settings, customization & history (JSON) 🔒', 'btn'], ['_restore', 'Restore from backup 🔒', 'btn'],
@@ -205,6 +205,16 @@
     const on = (k, f) => { const el = b.querySelector('#se-' + k); if (el) el.onclick = f; };
     on('_fxnow', async () => { msg.textContent = 'Updating…'; const r = await G.U45FX.update(true, P().settings().fxSource); msg.innerHTML = r.ok ? fxStatus() : 'Not updated: ' + esc(r.error); });
     on('_pin', async () => {
+      const hasPin = !!localStorage.getItem('u45.pin');
+      if (!hasPin) {
+        const n = prompt('Choose a passcode (4–8 digits)'); if (n == null) return;
+        if (!/^\d{4,8}$/.test(n)) { msg.textContent = 'New passcode must be 4–8 digits.'; return; }
+        let ok = false;
+        if (G.U45Secure && G.U45Secure.setPin) ok = await G.U45Secure.setPin(n);
+        else ok = await G.U45Guard.checkPin(n);
+        msg.textContent = ok ? 'Passcode set. You will need it to unlock next time.' : 'Could not set the passcode.';
+        return;
+      }
       const o = prompt('Current passcode'); if (o == null) return; const n = prompt('New passcode (4–8 digits)'); if (n == null) return;
       if (!/^\d{4,8}$/.test(n)) { msg.textContent = 'New passcode must be 4–8 digits.'; return; }
       let ok = false; if (G.U45Secure) ok = await G.U45Secure.changePin(o, n); else ok = await G.U45Guard.checkPin(o);
@@ -215,7 +225,7 @@
       if (!(await confirmPin('Creating a backup'))) return;
       const data = {}; Object.keys(localStorage).filter(k => /^u45\.(settings|cust\.|lay|hide\.|cal$|hist\.|histk$|knum|kcol|fx\.cache|vmode)/.test(k)).forEach(k => { data[k] = localStorage.getItem(k); });
       const note = 'History is stored encrypted; a backup restores it only on a device that keeps the same key (u45.histk) — the key is included only if history uses the local key.';
-      const txt = JSON.stringify({ app: 'U-45 CALCULATORS', v: '1.5.3', created: new Date().toISOString(), note, data }, null, 1);
+      const txt = JSON.stringify({ app: 'U-45 CALCULATORS', v: '1.5.4', created: new Date().toISOString(), note, data }, null, 1);
       G.U45Guard.saveFile({ name: 'U45-backup-' + new Date().toISOString().slice(0, 10) + '.json', mime: 'application/json', data: new TextEncoder().encode(txt) }, 'download');
     });
     on('_restore', async () => { if (!(await confirmPin('Restoring a backup'))) return; const f = b.querySelector('.se-file'); f.onchange = async () => { try { const j = JSON.parse(await f.files[0].text()); let n = 0; Object.entries(j.data || {}).forEach(([k, v]) => { if (/^u45\./.test(k) && k !== 'u45.pin') { localStorage.setItem(k, v); n++; } }); msg.textContent = 'Restored ' + n + ' item(s). Reloading…'; setTimeout(() => location.reload(), 800); } catch (e) { msg.textContent = 'Not a valid backup: ' + e.message; } }; f.click(); });
@@ -225,7 +235,7 @@
     on('_privacy', () => { msg.innerHTML = 'No accounts, no analytics, no tracking. Everything stays on this device (history is AES-GCM encrypted). The network is used only to: update exchange rates (open.er-api.com or api.frankfurter.app) and, if you enable it, to download extra OCR languages (cdn.jsdelivr.net). Turn on <b>Offline mode</b> to block both.'; });
     on('_install', () => G.U45Guard.installApp());
     on('_share', () => G.U45Guard.shareApp());
-    on('_about', () => { msg.innerHTML = 'U-45 CALCULATORS v1.5.3 · 45 calculators · all data stays on this device · feature-strip panels: ' + Object.entries(counts()).map(([k, v]) => esc(k) + ' ' + v).join(', '); });
+    on('_about', () => { msg.innerHTML = 'U-45 CALCULATORS v1.5.4 · 45 calculators · all data stays on this device · feature-strip panels: ' + Object.entries(counts()).map(([k, v]) => esc(k) + ' ' + v).join(', '); });
   }
 
   // ================= history UI =================

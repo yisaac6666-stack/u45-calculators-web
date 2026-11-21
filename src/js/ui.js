@@ -362,5 +362,33 @@
     }
   }
 
-  G.CalcUI = { h, k, sp, Editor, TPL, renderNatural, valueHTML, plainHTML, segSVG, buildCalc, attachKeyboard, stripTags, keyGroup, keyList, GROUP_NAMES, KBD, groupDisplay, groupText, groupOn };
+  // ---------- v1.5.4 shared key helpers: info/help panels, notes, clipboard ----------
+  const escH = (s) => String(s == null ? '' : s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  /** Opens a labelled panel (← Back / ✕ Close) over the calculator. Used by keys whose real function is information. */
+  function info(title, html) {
+    if (typeof document === 'undefined') return null;
+    if (G.U45Sheet) return G.U45Sheet.sheet(title, `<div class="u45-keyinfo">${html}</div>`);
+    return null;
+  }
+  /** 'info:Title|html' key actions: open the panel and report handled. */
+  function infoAct(a) { if (typeof a !== 'string' || !a.startsWith('info:')) return false; const i = a.indexOf('|'); info(a.slice(5, i < 0 ? undefined : i), i < 0 ? '' : a.slice(i + 1)); return true; }
+  /** Help panel for the current calculator: model notes + every numbered key with its shifted functions. */
+  function helpPanel(model) {
+    const rows = keyList(model).map(k => `<tr><td>${k.n}</td><td>${k.face || ''}</td><td>${k.s ? k.s[0] : ''}</td><td>${k.a ? k.a[0] : ''}${k.kd && k.kd.g ? ' ' + k.kd.g[0] : ''}</td><td>${escH(k.tip || '')}</td></tr>`).join('');
+    return info('Help — #' + model.id + ' ' + stripTags(model.name), `<p>${escH(model.notes || '')}</p><table class="u45-keyhelp"><tr><th>#</th><th>Key</th><th>Shift</th><th>Alpha / g</th><th>Note</th></tr>${rows}</table>`);
+  }
+  /** Notes panel: free text saved on this device for this calculator. */
+  function notesPanel(id) {
+    const key = 'u45.notes.' + id; let v = ''; try { v = localStorage.getItem(key) || ''; } catch (e) { /* */ }
+    const sh = info('Notes — calculator #' + id, `<p>Saved on this device only.</p><textarea class="u45-notes-ta" rows="10" style="width:100%" aria-label="Notes">${escH(v)}</textarea><p><button type="button" class="u45-notes-save">Save</button> <span class="u45-notes-st" aria-live="polite"></span></p>`);
+    if (sh && sh.body) { const ta = sh.body.querySelector('textarea'), st = sh.body.querySelector('.u45-notes-st'); const save = () => { try { localStorage.setItem(key, ta.value); st.textContent = 'Saved'; } catch (e) { st.textContent = 'Could not save'; } }; sh.body.querySelector('.u45-notes-save').onclick = save; ta.addEventListener('input', save); }
+    return sh;
+  }
+  /** App clipboard shared by every calculator (also copied to the system clipboard when allowed). */
+  const CLIP = { text: '' };
+  function clipSet(t) { CLIP.text = String(t == null ? '' : t); try { if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(CLIP.text).catch(() => {}); } catch (e) { /* */ } return CLIP.text; }
+  function clipGet() { return CLIP.text; }
+  function screenText(el) { if (!el) return ''; const c = el.cloneNode(true); c.querySelectorAll('svg[data-t]').forEach(e => e.replaceWith(document.createTextNode(' ' + e.getAttribute('data-t') + ' '))); c.querySelectorAll('div,br,tr,li,p').forEach(e => e.insertAdjacentText('afterend', '\n')); return (c.textContent || '').split('\n').map(l => l.replace(/\s+/g, ' ').trim()).filter(Boolean).join('\n'); }
+
+  G.CalcUI = { h, k, sp, Editor, TPL, renderNatural, valueHTML, plainHTML, segSVG, buildCalc, attachKeyboard, stripTags, keyGroup, keyList, GROUP_NAMES, KBD, groupDisplay, groupText, groupOn, info, infoAct, helpPanel, notesPanel, clipSet, clipGet, screenText, escH };
 })(window);

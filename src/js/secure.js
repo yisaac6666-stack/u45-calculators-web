@@ -91,6 +91,27 @@
     return true;
   }
 
+  function unlockSession(el) {
+    unlocked = true;
+    standDown();
+    if (el) el.remove();
+    document.documentElement.classList.remove('u45-locked-ui');
+    const blk = document.getElementById('u45-block'); if (blk) blk.remove();
+    document.documentElement.classList.add('u45-unlocked');
+    try { if (G.U45Sound) G.U45Sound.play('pinOk'); } catch (_) {}
+    try { routeAfterUnlock(); } catch (_) {}
+  }
+
+  async function setPin(newPin) {
+    if (!/^\d{4,8}$/.test(newPin)) return false;
+    localStorage.setItem(NS + '.pin', await sha256Hex('u45:' + newPin));
+    try { localStorage.removeItem(NS + '.pinSkip'); } catch (_) {}
+    await Store.ensureKey(newPin);
+    await Store.set('boot', { t: Date.now() });
+    Store.wipePlain();
+    return true;
+  }
+
   function showLock() {
     if (document.getElementById('u45-lock')) return;
     const hasPin = !!localStorage.getItem(NS + '.pin');
@@ -99,9 +120,14 @@
     el.innerHTML = `<h2>U-45 CALCULATORS</h2>
       <p>${hasPin ? 'Enter your passcode to unlock' : 'Create a 4–8 digit passcode to protect this app'}</p>
       <input id="u45-pin" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="8" autocomplete="off" autofocus>
-      <button id="u45-go" type="button">${hasPin ? 'Unlock' : 'Set & Unlock'}</button>
+      <div class="lock-btns">
+        ${hasPin ? '' : '<button id="u45-skip" type="button" class="skip">Skip</button>'}
+        <button id="u45-go" type="button">${hasPin ? 'Unlock' : 'Set & Unlock'}</button>
+      </div>
       <div class="err" id="u45-err"></div>
-      <p class="hint">The passcode is stored only on this device (as a one-way hash) and is never sent anywhere.</p>`;
+      <p class="hint">${hasPin
+        ? 'The passcode is stored only on this device (as a one-way hash) and is never sent anywhere.'
+        : 'You can skip and set a passcode later in Settings. The passcode is stored only on this device (as a one-way hash) and is never sent anywhere.'}</p>`;
     document.body.appendChild(el);
     const input = el.querySelector('#u45-pin');
     const err = el.querySelector('#u45-err');
@@ -110,18 +136,17 @@
       if (!/^\d{4,8}$/.test(pin)) { err.textContent = 'Use 4–8 digits'; return; }
       const ok = await verifyPin(pin);
       if (!ok) { err.textContent = 'Incorrect passcode'; try { if (G.U45Sound) G.U45Sound.play('pinWrong'); } catch (_) {} input.value = ''; input.focus(); return; }
+      try { localStorage.removeItem(NS + '.pinSkip'); } catch (_) {}
       // Correct PIN: unlock and STAND DOWN the inspector/debugger trap for this session.
-      unlocked = true;
-      standDown();
-      el.remove();
-      document.documentElement.classList.remove('u45-locked-ui');
-      const blk = document.getElementById('u45-block'); if (blk) blk.remove();
-      document.documentElement.classList.add('u45-unlocked');
-      try { if (G.U45Sound) G.U45Sound.play('pinOk'); } catch (_) {}
-      try { routeAfterUnlock(); } catch (_) {}
+      unlockSession(el);
     };
     el.querySelector('#u45-go').onclick = go;
     input.addEventListener('keydown', (e) => { if (e.key === 'Enter') go(); });
+    const skip = el.querySelector('#u45-skip');
+    if (skip) skip.onclick = () => {
+      try { localStorage.setItem(NS + '.pinSkip', '1'); } catch (_) {}
+      unlockSession(el);
+    };
   }
 
   function routeAfterUnlock() {
@@ -313,7 +338,15 @@
       return;
     }
     if (G.__u45RootFlag) showRootWarning();
-    if (enforce) {
+    const hasPin = !!localStorage.getItem(NS + '.pin');
+    let skipped = false;
+    try { skipped = !hasPin && localStorage.getItem(NS + '.pinSkip') === '1'; } catch (_) {}
+    if (enforce && skipped) {
+      // First-run Skip was chosen on this device: stay unlocked, no overlay.
+      unlocked = true;
+      document.documentElement.classList.add('u45-unlocked');
+      trapArmed = false;
+    } else if (enforce) {
       showLock();
       armDevtoolsTrap();
       trapArmed = true;
@@ -328,13 +361,11 @@
   // Public API
   G.U45Secure = {
     Store, verifyPin, showLock, integrityOk, checkEnvironment,
+    setPin,
     changePin: async (oldPin, newPin) => {
+      if (!localStorage.getItem(NS + '.pin')) return setPin(newPin);
       if (!(await verifyPin(oldPin))) return false;
-      if (!/^\d{4,8}$/.test(newPin)) return false;
-      localStorage.setItem(NS + '.pin', await sha256Hex('u45:' + newPin));
-      await Store.ensureKey(newPin);
-      await Store.set('boot', { t: Date.now() });
-      return true;
+      return setPin(newPin);
     },
     unlockStatus: () => unlocked,
     rootWarning: showRootWarning,

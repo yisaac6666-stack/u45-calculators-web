@@ -36,6 +36,7 @@
       this.render();
     }
     handle(a) {
+      if (G.CalcUI && G.CalcUI.infoAct(a)) return;
       const dm = /^d(\d)$/.exec(a); if (dm) { this.digit(dm[1]); return; }
       if (a.startsWith('decsw:')) { this.dec = a.slice(6); return; }
       if (a.startsWith('rndsw:')) { this.round = a.slice(6); return; }

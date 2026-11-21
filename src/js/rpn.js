@@ -6,11 +6,24 @@
   const isCx = (v) => v && typeof v === 'object' && v.re !== undefined;
   const clean = (v) => { if (isCx(v)) { if (Math.abs(v.im) < 1e-15 * Math.max(1, Math.abs(v.re))) return E.round15(v.re); return M.complex(E.round15(v.re), E.round15(v.im)); } return E.round15(v); };
 
+  const pad2 = (n) => String(n).padStart(2, '0');
+  const strip = (h) => String(h == null ? '' : h).replace(/<[^>]+>/g, '');
+  /** Label of the layer of key kd that carries action a (for program listings and CUSTOM). */
+  function keyLabel(kd, a) { kd = kd || {}; for (const l of ['s', 'g', 'a']) if (kd[l] && kd[l][1] === a) return strip(kd[l][0]); return strip(kd.face || a); }
+  /** Best fraction with denominator <= maxD, shown as "a b/c" (35s FDISP). */
+  function fracText(x, maxD) {
+    const sg = x < 0 ? '-' : ''; x = Math.abs(x); const w = Math.floor(x); const f = x - w;
+    let h0 = 0, h1 = 1, k0 = 1, k1 = 0, b = f, bh = 0, bk = 1;
+    for (let i = 0; i < 40; i++) { const q = Math.floor(b); const h2 = q * h1 + h0, k2 = q * k1 + k0; if (k2 > maxD) break; h0 = h1; h1 = h2; k0 = k1; k1 = k2; bh = h1; bk = k1; const r = b - q; if (r < 1e-12) break; b = 1 / r; }
+    if (!bk || !bh) return sg + w; const exact = Math.abs(f - bh / bk) < 1e-12; return sg + (w ? w + ' ' : '') + bh + '/' + bk + (exact ? '' : (f > bh / bk ? '▴' : '▾'));
+  }
+  const ALG_OPS = { add: '+', sub: '-', mul: '*', div: '/', ypow: '^' };
   class RPNApp {
     constructor(model, el) { this.model = model; this.el = el; this.cfg = Object.assign({ variant: '42s', digits: 12 }, model.cfg || {}); this.reset(); }
     reset() {
       this.s = { x: 0, y: 0, z: 0, t: 0 }; this.lastX = 0; this.lift = true; this.entry = null; this.shift = false; this.gshift = false; this.angle = 'deg';
       this.fmt = { mode: 'fix', n: this.cfg.fixDefault != null ? this.cfg.fixDefault : 4 }; this.regs = Array(20).fill(0); this.vars = {}; this.menu = null; this.menuPage = 0; this.msg = null; this.err = null; this.pending = null; this.on = true; this.polar = false; this.base = 10; this.sigma = { n: 0, sx: 0, sy: 0, sx2: 0, sy2: 0, sxy: 0 };
+      this.pgm = []; this.pc = 0; this.prgmMode = false; this.inRun = false; this.flags = {}; this.custom = []; this.alphaMode = false; this.alphaReg = ''; this._undo = null; this.seed = null; this.hypNext = false; this.fdisp = false; this.fdenom = 4095; this.algMode = false; this.algStr = ''; this.algIn = false;
       if (this.initExtra) this.initExtra();
     }
     // ---- stack ----
@@ -73,10 +86,10 @@
         case 'gamma': P(x => M.gamma(x)); return true;
         case 'comb': B((y, x) => E.FUNCS.ncr([y, x])); return true;
         case 'perm': B((y, x) => E.FUNCS.npr([y, x])); return true;
-        case 'ran': this.finish(); if (this.lift) this.push(Math.random()); else s.x = Math.random(); this.lift = true; return true;
+        case 'ran': { this.finish(); const r = this.rand(); if (this.lift) this.push(r); else s.x = r; this.lift = true; return true; }
         case 'abs': P(x => isCx(x) ? M.abs(x) : Math.abs(x)); return true;
         case 'ip': P(x => Math.trunc(x)); return true; case 'fp': P(x => x - Math.trunc(x)); return true;
-        case 'rnd': P(x => parseFloat(this.fmtNum(x).replace(/,/g, '').replace('E', 'e'))); return true;
+        case 'rnd': P(x => { const t = this.fmtNum(x); const s = typeof t === 'string' ? t : t.main + (t.exp ? 'E' + t.exp : ''); return parseFloat(s.replace(/,/g, '').replace('E', 'e')); }); return true;
         case 'sign': P(x => Math.sign(x)); return true;
         case 'mod': B((y, x) => { if (x === 0) return y; return y - x * Math.floor(y / x); }); return true;
         case 'todeg': P(x => x * 180 / Math.PI); return true; case 'torad': P(x => x * Math.PI / 180); return true;
@@ -110,6 +123,7 @@
       maxLen = maxLen || this.cfg.digits;
       if (isCx(v)) { if (this.polar) return this.fmtNum(M.abs(v), 8) + ' ∠' + this.fmtNum(M.arg(v) / ANG[this.angle], 8); return this.fmtNum(v.re, 8) + ' i' + this.fmtNum(v.im, 8); }
       if (this.base !== 10) return (v < 0 ? (v >>> 0) : v).toString(this.base).toUpperCase() + { 16: 'h', 8: 'o', 2: 'b' }[this.base];
+      if (this.fdisp && typeof v === 'number' && isFinite(v) && v !== Math.round(v)) return fracText(v, this.fdenom);
       const f = this.fmt; const mode = f.mode === 'all' ? 'norm1' : f.mode;
       const r = E.formatNumber(v, { mode, n: f.n, digits: Math.min(12, maxLen) });
       let m = r.mant; if (this.cfg.dotAlways !== false && !m.includes('.')) m += '.';
@@ -118,12 +132,15 @@
     }
     entryText() { let s = this.entry; if (s === '') s = ''; return s.replace('E', 'ᴇ') + '_'; }
     press(kd) {
-      let a = kd.act;
-      if (this.shift && kd.s) a = kd.s[1]; else if (this.gshift && kd.g) a = kd.g[1];
+      let a = kd.act, lay = 'p';
+      if (this.shift && kd.s) { a = kd.s[1]; lay = 's'; } else if (this.gshift && kd.g) { a = kd.g[1]; lay = 'g'; } else if (this.alphaMode && kd.a && !this.pending) { a = kd.a[1]; lay = 'a'; }
       if (a === 'shift' || a === 'fshift') { this.shift = !this.shift; this.gshift = false; this.render(); return; }
       if (a === 'gshift') { this.gshift = !this.gshift; this.shift = false; this.render(); return; }
+      const wasShift = this.shift, wasG = this.gshift;
       this.shift = false; this.gshift = false; this.msg = null;
       if (!this.on && a !== 'on' && a !== 'onoff' && a !== 'exit') return;
+      if (this.prgmMode && !this.alphaMode && this.recordKey(a, kd, lay, wasShift, wasG)) { this.render(); return; }
+      if (a !== 'undo') this._undo = { s: Object.assign({}, this.s), lastX: this.lastX, entry: this.entry, lift: this.lift };
       try {
         if (this.err) { this.err = null; if (a === 'bksp' || a === 'exit' || a === 'clx') { this.render(); return; } }
         this.handle(a, kd);
@@ -133,6 +150,7 @@
     // ---- 42S-style handle with soft menus ----
     handle(a, kd) {
       if (this.pending) { const p = this.pending; this.pending = null; return this.pendingKey(p, a, kd); }
+      if (this.ext(a, kd || {})) return;
       if (this.menu && /^m[1-6]$/.test(kd.menuKey || '') && !['shift'].includes(a)) { const items = this.menuItems(); const it = items[this.menuPage * 6 + (+kd.menuKey[1]) - 1]; if (it && it[1]) { if (typeof it[1] === 'function') it[1](); else this.handle(it[1], {}); } return; }
       const d = /^d(\d)$/.exec(a); if (d) { if (this.base === 2 && +d[1] > 1 || this.base === 8 && +d[1] > 7) return; this.digit(d[1]); return; }
       if (a.startsWith('hex:')) { if (this.base === 16) this.digit(a[4]); return; }
@@ -153,6 +171,16 @@
     }
     pendingKey(p, a, kd) {
       const d = /^d(\d)$/.exec(a);
+      if (/^(gto|flag|view|input)$/.test(p.k)) {
+        if (d) { p.digits += d[1]; if (p.digits.length < 2) { this.pending = p; return; } } else if (!(a === 'enter' && p.digits)) return;
+        const n = +p.digits;
+        if (p.k === 'gto') { this.pc = Math.min(n, this.pgm.length); this.msg = 'GTO ' + pad2(this.pc); return; }
+        if (p.k === 'view') { this.msg = 'R' + pad2(n) + '=' + this.fmtNum(this.regs[n] || 0); return; }
+        if (p.k === 'input') { this.finish(); const v = this.regs[n] || 0; if (this.lift) this.push(v); else this.s.x = v; this.lift = true; this.msg = 'R' + pad2(n) + '? ' + this.fmtNum(v); return; }
+        if (p.op === 'sf') { this.flags[n] = true; return; } if (p.op === 'cf') { this.flags[n] = false; return; }
+        return this.testResult(p.op === 'fs' ? !!this.flags[n] : !this.flags[n]);
+      }
+      if (p.k === 'assign') { if (/^(exit|shift|gshift|fshift)$/.test(a)) return; const lab = keyLabel(kd, a); this.custom.push({ label: lab, a }); if (this.custom.length > 6) this.custom.shift(); this.msg = 'CUSTOM ' + this.custom.length + ': ' + lab; return; }
       if (p.k === 'fix' || p.k === 'sci' || p.k === 'eng') { if (d) { p.digits += d[1]; if (p.digits.length >= (this.cfg.fixDigits || 2) || +p.digits > 1) { this.fmt = { mode: p.k, n: Math.min(11, +p.digits) }; return; } this.pending = p; return; } if (a === 'enter') { this.fmt = { mode: p.k, n: +(p.digits || 0) }; } return; }
       if (p.k === 'sto' || p.k === 'rcl') {
         if (['add', 'sub', 'mul', 'div'].includes(a) && !p.op) { p.op = a; this.pending = p; return; }
@@ -175,40 +203,179 @@
     menuItems() {
       const g = (l, a) => [l, a];
       const MENUS = {
-        TOP: [g('Σ+', 'sigplus'), g('1/x', 'inv'), g('√x', 'sqrt'), g('LOG', 'log'), g('LN', 'ln'), g('XEQ', 'noop')],
+        TOP: [g('Σ+', 'sigplus'), g('1/x', 'inv'), g('√x', 'sqrt'), g('LOG', 'log'), g('LN', 'ln'), g('XEQ', 'xeq')],
         MODES: [g('DEG', 'deg'), g('RAD', 'rad'), g('GRAD', 'grad'), g('', null), g('RECT', 'rect'), g('POLAR', 'polar')],
         DISP: [g('FIX', 'fix'), g('SCI', 'sci'), g('ENG', 'eng'), g('ALL', 'all'), g('', null), g('', null)],
-        CLEAR: [g('CLΣ', 'clsig'), g('CLP', 'noop'), g('CLV', () => { this.vars = {}; }), g('CLST', 'clst'), g('CLA', 'noop'), g('CLX', 'clx'), g('CLRG', () => { this.regs.fill(0); }), g('DEL', 'noop'), g('CLKEY', 'noop'), g('CLLCD', 'noop'), g('CLMENU', 'noop'), g('CLALL', 'reset')],
+        CLEAR: [g('CLΣ', 'clsig'), g('CLP', 'clp'), g('CLV', () => { this.vars = {}; }), g('CLST', 'clst'), g('CLA', 'clalpha'), g('CLX', 'clx'), g('CLRG', () => { this.regs.fill(0); }), g('DEL', 'dstep'), g('CLKEY', 'clkey'), g('CLLCD', 'cllcd'), g('CLMENU', 'clmenu'), g('CLALL', 'reset')],
         CONVERT: [g('→DEG', 'todeg'), g('→RAD', 'torad'), g('→HR', 'tohr'), g('→HMS', 'tohms'), g('→REC', 'torec'), g('→POL', 'topol'), g('IP', 'ip'), g('FP', 'fp'), g('RND', 'rnd'), g('ABS', 'abs'), g('SIGN', 'sign'), g('MOD', 'mod')],
-        PROB: [g('COMB', 'comb'), g('PERM', 'perm'), g('N!', 'fact'), g('GAM', 'gamma'), g('RAN', 'ran'), g('SEED', 'noop')],
+        PROB: [g('COMB', 'comb'), g('PERM', 'perm'), g('N!', 'fact'), g('GAM', 'gamma'), g('RAN', 'ran'), g('SEED', 'seed')],
         STAT: [g('Σ+', 'sigplus'), g('SUM', 'sum'), g('MEAN', 'mean'), g('WMN', 'mean'), g('SDEV', 'sdev'), g('CFIT', () => { this.menu = 'CFIT'; this.parentMenu = 'STAT'; })],
-        CFIT: [g('FCSTX', 'xhat'), g('FCSTY', 'yhat'), g('SLOPE', 'slope'), g('YINT', 'yint'), g('CORR', 'corr'), g('MODL', 'noop')],
+        CFIT: [g('FCSTX', 'xhat'), g('FCSTY', 'yhat'), g('SLOPE', 'slope'), g('YINT', 'yint'), g('CORR', 'corr'), g('MODL', 'modl')],
         BASE: [g('A', 'hex:A'), g('B', 'hex:B'), g('C', 'hex:C'), g('D', 'hex:D'), g('E', 'hex:E'), g('F', 'hex:F'), g('HEXM', 'hexm'), g('DECM', 'decm'), g('OCTM', 'octm'), g('BINM', 'binm'), g('LOGIC', () => { this.menu = 'LOGIC'; this.parentMenu = 'BASE'; }), g('', null)],
         LOGIC: [g('AND', 'and'), g('OR', 'or'), g('XOR', 'xor'), g('NOT', 'not'), g('', null), g('', null)],
         COMPLEX: [g('COMPLEX', 'complex'), g('RECT', 'rect'), g('POLAR', 'polar'), g('', null), g('', null), g('', null)],
-        SOLVER: [g('n/a', () => this.msg = 'Programs not available'), g('', null), g('', null), g('', null), g('', null), g('', null)],
+        SOLVER: [g('SOLVE', 'solve'), g('∫f(x)', 'integ'), g('QUAD', 'eq:quad'), g('CUBIC', 'eq:cubic'), g('SYS2', 'eq:sys2'), g('SYS3', 'eq:sys3')],
+        MATRIX: [g('DET2', 'mat:det2'), g('DET3', 'mat:det3'), g('INV2', 'mat:inv2'), g('SYS2', 'eq:sys2'), g('SYS3', 'eq:sys3'), g('LIN', 'eq:lin')],
+        FLAGS: [g('SF', 'sf'), g('CF', 'cf'), g('FS?', 'fs'), g('FC?', 'fc'), g('', null), g('', null)],
+        PGMFCN: [g('X=Y?', 'test:xeqy'), g('X≠Y?', 'test:xney'), g('X<Y?', 'test:xlty'), g('X>Y?', 'test:xgty'), g('X≤Y?', 'test:xley'), g('X≥Y?', 'test:xgey'), g('X=0?', 'test:xeq0'), g('X≠0?', 'test:xne0'), g('ISG', 'isg'), g('DSE', 'dse'), g('RTN', 'rtn'), g('PSE', 'pse')],
+        CUSTOM: [0, 1, 2, 3, 4, 5].map(i => this.custom[i] ? g(this.custom[i].label, this.custom[i].a) : g('', null)),
       };
       return MENUS[this.menu] || [];
     }
+    // ---- v1.5.4: keystroke programs, tests, flags, CUSTOM, ALPHA, equations, conversions, ALG mode ----
+    rand() { if (this.seed == null) return Math.random(); let t = (this.seed = (this.seed + 0x6D2B79F5) | 0); t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }
+    keyCode(kd) { if (!this._kn) { this._kn = new Map(); U.keyList(this.model).forEach(k => { if (k.kd) this._kn.set(k.kd, k.n); }); } return this._kn.get(kd); }
+    recordKey(a, kd, lay, wasShift, wasG) {
+      if (/^(prgm|pr|sst|bst|bksp|exit|gto|clp|dstep|on|off|onoff|up|down|alphamode)$/.test(a)) return false;
+      if (this.menu && /^m[1-6]$/.test(kd.menuKey || '')) { const it = this.menuItems()[this.menuPage * 6 + (+kd.menuKey[1]) - 1]; if (it && typeof it[1] === 'string') { a = it[1]; kd = {}; this.pgm.splice(this.pc++, 0, { a, kd: {}, label: strip(it[0]), code: (this.keyCode(kd) || 0) }); return true; } }
+      const n = this.keyCode(kd) || 0; const code = (lay === 's' ? (this.cfg.digits === 10 ? '42 ' : 'f ') : lay === 'g' ? (this.cfg.digits === 10 ? '43 ' : 'g ') : '') + (/^d\d$/.test(kd.act) && lay === 'p' ? kd.act[1] : pad2(Math.ceil(n / 10) * 10 + (n % 10)));
+      this.pgm.splice(this.pc, 0, { a, kd: { menuKey: kd.menuKey, a: kd.a, regName: kd.regName, act: kd.act }, label: lay === 'p' ? strip(kd.face || a) : keyLabel(kd, a), code }); this.pc++;
+      if (/^menu:/.test(a)) { this.menu = a.slice(5); this.menuPage = 0; }
+      return true;
+    }
+    prgLine() { if (!this.pc) return '00 {' + this.pgm.length + '-Step Prgm}'; const st = this.pgm[this.pc - 1]; return pad2(this.pc) + ' ' + (st ? st.label : ''); }
+    runProg(fromTop) {
+      if (!this.pgm.length) { this.msg = 'No program yet (P/R or PRGM)'; return; }
+      if (fromTop) this.pc = 0; if (this.pc >= this.pgm.length) this.pc = 0;
+      const outer = this.inRun; this.inRun = true; let n = 0;
+      try {
+        while (this.pc < this.pgm.length) {
+          if (++n > 20000) throw new E.CalcError('Stop: 20000 steps');
+          const st = this.pgm[this.pc++];
+          if (st.a === 'rs' || st.a === 'input') { if (st.a === 'input') this.msg = 'INPUT? R/S'; return; }
+          if (st.a === 'rtn') break;
+          this.handle(st.a, st.kd || {});
+        }
+        this.pc = 0;
+      } finally { this.inRun = outer; }
+    }
+    fx(x) {
+      if (this.inFx) throw new E.CalcError('SOLVE inside f(x)');
+      const sv = { s: Object.assign({}, this.s), entry: this.entry, lift: this.lift, lastX: this.lastX, pc: this.pc, msg: this.msg, menu: this.menu };
+      this.inFx = true; this.entry = null; this.s = { x, y: x, z: x, t: x }; this.lift = true;
+      try { this.runProg(true); const v = this.s.x; return typeof v === 'number' ? v : NaN; }
+      finally { Object.assign(this, sv); this.inFx = false; }
+    }
+    testResult(r) { if (this.inRun) { if (!r) this.pc++; return; } this.msg = r ? (this.cfg.digits === 10 ? 'yES' : 'yes') : 'no'; }
+    pushRes(vals) { this.finish(); vals.forEach(v => this.push(clean(v))); this.lift = true; }
+    ext(a, kd) {
+      const s = this.s;
+      // program-entry mode controls
+      if (this.prgmMode) {
+        if (a === 'prgm' || a === 'pr' || a === 'exit') { this.prgmMode = false; this.pc = 0; return true; }
+        if ((a === 'sst' || a === 'down') && !this.menu) { this.pc = Math.min(this.pc + 1, this.pgm.length); return true; }
+        if ((a === 'bst' || a === 'up') && !this.menu) { this.pc = Math.max(this.pc - 1, 0); return true; }
+        if (a === 'bksp' || a === 'dstep') { if (this.pc) { this.pgm.splice(this.pc - 1, 1); this.pc--; } return true; }
+      }
+      if (this.alphaMode) {
+        if (a.startsWith('alpha:')) { if (this.alphaReg.length < 44) this.alphaReg += a.slice(6); return true; }
+        if (a === 'bksp') { this.alphaReg = this.alphaReg.slice(0, -1); return true; }
+        if (a === 'enter' || a === 'exit' || a === 'alphamode') { this.alphaMode = false; this.msg = this.alphaReg ? 'α "' + this.alphaReg + '"' : null; return true; }
+      }
+      if (this.hypNext && /^a?(sin|cos|tan)$/.test(a)) { this.hypNext = false; return this.op(a + 'h'), true; }
+      if (!/^(shift|gshift|hypnext)$/.test(a)) this.hypNext = false;
+      // algebraic mode (12C platinum ALG, 35s MODE 4ALG)
+      if (this.algMode) {
+        const numS = () => { this.finish(); const x = this.s.x; const t = String(Math.abs(x)).replace(/e\+?/, 'ᴇ').replace('ᴇ-', 'ᴇ~'); return x < 0 ? '(~' + t + ')' : t; };
+        if (ALG_OPS[a]) { if (this.entry == null && this.algIn && /[-+*/^]$/.test(this.algStr)) this.algStr = this.algStr.slice(0, -1); else if (this.algClosed && this.entry == null) { /* value already in */ } else this.algStr += numS(); this.algStr += ALG_OPS[a]; this.algIn = true; this.algClosed = false; this.lift = false; this.entry = null; return true; }
+        if (a === 'lpar') { this.algStr += '('; this.algIn = true; return true; }
+        if (a === 'rpar' || a === 'paren') {
+          const open = (this.algStr.match(/\(/g) || []).length - (this.algStr.match(/\)/g) || []).length;
+          if (a === 'paren' && (!open || /[-+*/^(]$/.test(this.algStr) && this.entry == null)) { this.algStr += '('; this.algIn = true; return true; }
+          if (!open) return true; if (!this.algClosed || this.entry != null) this.algStr += numS(); this.algStr += ')'; this.algClosed = true;
+          try { const part = this.algStr.slice(this.algStr.lastIndexOf('(', this.algStr.length - 2)); void part; } catch (e) { /* */ } return true;
+        }
+        if (a === 'algeq' || a === 'enter') {
+          if (!this.algStr) { this.finish(); this.lift = true; return true; }
+          if (!(this.algClosed && this.entry == null)) this.algStr += numS();
+          let src = this.algStr; const open = (src.match(/\(/g) || []).length - (src.match(/\)/g) || []).length; src += ')'.repeat(Math.max(0, open));
+          this.algStr = ''; this.algIn = false; this.algClosed = false;
+          const v = E.evaluate(src, E.makeEnv({ angle: this.angle })); s.x = this.chk(v); this.lift = true; return true;
+        }
+      }
+      if ((a === 'up' || a === 'down') && !this.menu && !this.menuSel) { this.op(a === 'up' ? 'rup' : 'rdn'); return true; }
+      if (a.startsWith('conv:')) { const f = E.UNIT_CONV[a.slice(5)]; this.un(x => f(x)); return true; }
+      if (a.startsWith('test:')) { this.finish(); const x = s.x, y = s.y; const T = { xeqy: x === y, xney: x !== y, xlty: x < y, xgty: x > y, xley: x <= y, xgey: x >= y, xeq0: x === 0, xne0: x !== 0, xlt0: x < 0, xgt0: x > 0, xle0: x <= 0, xge0: x >= 0 }; this.testResult(T[a.slice(5)]); return true; }
+      if (a.startsWith('eq:') || a.startsWith('mat:')) { this.finish(); const R = (i) => this.regs[i] || 0;
+        switch (a) {
+          case 'eq:lin': { if (s.y === 0) throw new E.CalcError('Divide by 0'); this.lastX = s.x; const r = -s.x / s.y; s.x = this.chk(r); s.y = s.z; s.z = s.t; this.lift = true; return true; }
+          case 'eq:quad': { const r = E.polyRoots([s.z, s.y, s.x]); this.lastX = s.x; s.x = clean(r[0]); s.y = clean(r[1] != null ? r[1] : r[0]); s.z = s.t; this.lift = true; this.msg = this.cfg.variant === '42s' ? null : null; return true; }
+          case 'eq:cubic': { const r = E.polyRoots([s.t, s.z, s.y, s.x]); this.lastX = s.x; s.x = clean(r[0]); s.y = clean(r[1]); s.z = clean(r[2]); s.t = 0; this.lift = true; return true; }
+          case 'eq:sys2': { const v = E.solveLinear([[R(1), R(2)], [R(4), R(5)]], [R(3), R(6)]); this.lastX = s.x; s.t = s.y; s.z = 0; s.y = clean(v[1]); s.x = clean(v[0]); this.lift = true; return true; }
+          case 'eq:sys3': { const v = E.solveLinear([[R(1), R(2), R(3)], [R(5), R(6), R(7)], [R(9), R(10), R(11)]], [R(4), R(8), R(12)]); this.lastX = s.x; s.t = 0; s.z = clean(v[2]); s.y = clean(v[1]); s.x = clean(v[0]); this.lift = true; return true; }
+          case 'mat:det2': { this.lastX = s.x; const d = s.t * s.x - s.z * s.y; this.push(this.chk(d)); this.lift = true; return true; }
+          case 'mat:det3': { const m = [1, 2, 3, 4, 5, 6, 7, 8, 9].map(R); const d = m[0] * (m[4] * m[8] - m[5] * m[7]) - m[1] * (m[3] * m[8] - m[5] * m[6]) + m[2] * (m[3] * m[7] - m[4] * m[6]); this.push(this.chk(E.round15(d))); this.lift = true; return true; }
+          case 'mat:inv2': { const d = s.t * s.x - s.z * s.y; if (d === 0) throw new E.CalcError('Singular'); const [A, B, C, D] = [s.t, s.z, s.y, s.x]; s.t = E.round15(D / d); s.z = E.round15(-B / d); s.y = E.round15(-C / d); s.x = E.round15(A / d); this.lift = true; return true; }
+        }
+      }
+      switch (a) {
+        case 'prgm': case 'pr': this.finish(); this.prgmMode = true; this.menu = null; return true;
+        case 'rs': this.finish(); this.runProg(false); return true;
+        case 'xeq': this.finish(); this.runProg(true); return true;
+        case 'gto': this.pending = { k: 'gto', digits: '' }; return true;
+        case 'sst': if (!this.pgm.length) { this.msg = 'No program yet (P/R or PRGM)'; return true; } { if (this.pc >= this.pgm.length) this.pc = 0; const st = this.pgm[this.pc++]; this.msg = pad2(this.pc) + ' ' + st.label; const keep = this.msg; if (!/^(rs|rtn|input)$/.test(st.a)) { const r = this.inRun; this.inRun = true; try { this.handle(st.a, st.kd || {}); } finally { this.inRun = r; } } if (!this.err) this.msg = keep; if (this.pc >= this.pgm.length) this.pc = 0; } return true;
+        case 'bst': this.pc = Math.max(0, (this.pc || this.pgm.length) - 1); this.msg = this.prgLine(); return true;
+        case 'rtn': this.pc = 0; this.msg = 'RTN: line 00'; return true;
+        case 'pse': this.finish(); this.msg = 'PSE ' + (this.cfg.digits === 10 ? '' : this.fmtNum(s.x)); return true;
+        case 'input': this.pending = { k: 'input', digits: '' }; return true;
+        case 'view': this.pending = { k: 'view', digits: '' }; return true;
+        case 'clp': this.pgm = []; this.pc = 0; this.msg = 'PRGM cleared'; return true;
+        case 'dstep': if (this.pc) { this.pgm.splice(this.pc - 1, 1); this.pc--; } this.msg = this.prgLine(); return true;
+        case 'isg': case 'dse': { this.finish(); s.x = s.x + (a === 'isg' ? 1 : -1); this.lift = true; this.testResult(a === 'isg' ? !(s.x > s.y) : !(s.x <= s.y)); return true; }
+        case 'xtest': this.menuSel35([['1x=y', 'test:xeqy'], ['2x≠y', 'test:xney'], ['3x<y', 'test:xlty'], ['4x>y', 'test:xgty'], ['5x≤y', 'test:xley'], ['6x≥y', 'test:xgey']]); return true;
+        case 'x0test': this.menuSel35([['1x=0', 'test:xeq0'], ['2x≠0', 'test:xne0'], ['3x<0', 'test:xlt0'], ['4x>0', 'test:xgt0'], ['5x≤0', 'test:xle0'], ['6x≥0', 'test:xge0']]); return true;
+        case 'eqn': this.menuSel35([['1LIN', 'eq:lin'], ['2QUAD', 'eq:quad'], ['3CUB', 'eq:cubic'], ['4SYS2', 'eq:sys2'], ['5SYS3', 'eq:sys3']]); return true;
+        case 'sf': case 'cf': case 'fs': case 'fc': this.pending = { k: 'flag', op: a, digits: '' }; return true;
+        case 'assign': this.pending = { k: 'assign' }; return true;
+        case 'custom': this.menu = 'CUSTOM'; this.menuPage = 0; if (!this.custom.length) this.msg = 'CUSTOM: none yet, use ASSIGN'; return true;
+        case 'solve': { this.finish(); if (!this.pgm.length) { this.msg = 'SOLVE: write f(x) in PRGM'; return true; } const g = s.x; const r = E.solve((x) => this.fx(x), g); const S = this.s; this.lastX = S.x; S.y = S.x; S.x = this.chk(E.round15(r)); this.lift = true; return true; }
+        case 'integ': { this.finish(); if (!this.pgm.length) { this.msg = '∫: write f(x) in PRGM'; return true; } const lo = s.y, hi = s.x; const r = E.integrate((x) => this.fx(x), lo, hi); const S = this.s; this.lastX = S.x; S.x = this.chk(E.round15(r)); S.y = S.z; S.z = S.t; this.lift = true; return true; }
+        case 'print': this.finish(); U.info('PRINT — stack, registers and program', `<pre>T: ${this.fmtNum(s.t)}\nZ: ${this.fmtNum(s.z)}\nY: ${this.fmtNum(s.y)}\nX: ${this.fmtNum(s.x)}\nLAST X: ${this.fmtNum(this.lastX)}\n\n${this.regs.map((v, i) => v ? 'R' + pad2(i) + ' = ' + this.fmtNum(v) : '').filter(Boolean).join('\n') || 'All registers 0'}\n\n${this.pgm.length ? this.pgm.map((p, i) => pad2(i + 1) + ' ' + p.label).join('\n') : 'No program'}</pre><p>Use your browser or the tool bar to print or share this panel.</p>`); return true;
+        case 'alphamode': this.alphaMode = true; this.alphaReg = ''; this.menu = null; return true;
+        case 'clalpha': this.alphaReg = ''; this.msg = 'ALPHA cleared'; return true;
+        case 'clkey': this.custom = []; this.msg = 'CUSTOM cleared'; return true;
+        case 'cllcd': this.msg = ' '; return true;
+        case 'clmenu': this.menu = null; return true;
+        case 'modl': this.msg = 'MODEL: LINF (y = a + b·x)'; return true;
+        case 'fnsel': this.msg = 'FN = PRGM (' + this.pgm.length + ' steps)'; return true;
+        case 'hypnext': this.hypNext = true; this.msg = 'HYP'; return true;
+        case 'arg': this.un(x => isCx(x) ? M.arg(x) / ANG[this.angle] : (x < 0 ? Math.PI / ANG[this.angle] : 0)); return true;
+        case 'seed': this.finish(); this.seed = Math.floor(Math.abs(s.x) * 1e6) | 0; this.msg = 'SEED ' + this.fmtNum(s.x); return true;
+        case 'fdisp': this.fdisp = !this.fdisp; this.msg = this.fdisp ? 'FDISP on' : 'FDISP off'; return true;
+        case 'fdenom': { this.finish(); const n = Math.round(Math.abs(s.x)); if (n >= 2 && n <= 4095) this.fdenom = n; this.msg = '/c = ' + this.fdenom; return true; }
+        case 'std': this.fmt = { mode: 'all' }; return true;
+        case 'undo': if (this._undo) { Object.assign(this, { s: this._undo.s, lastX: this._undo.lastX, entry: this._undo.entry, lift: this._undo.lift }); this._undo = null; this.msg = 'UNDO'; } else this.msg = 'Nothing to undo'; return true;
+        case 'algmode': this.finish(); this.algMode = true; this.algStr = ''; this.msg = 'ALG'; return true;
+        case 'rpnmode': this.finish(); this.algMode = false; this.algStr = ''; this.msg = 'RPN'; return true;
+        case 'algeq': this.enter(); return true;
+        case 'lpar': case 'paren': this.finish(); this.algMode = true; this.algStr = '('; this.algIn = true; this.algClosed = false; this.msg = 'ALG ('; return true;
+        case 'rpar': this.msg = ') closes a ( in ALG mode'; return true;
+      }
+      return false;
+    }
+    menuSel35(items) { this.menuSel = items; this.menuText = items.map(x => x[0]).join(' '); }
     // ---- rendering ----
     render() {
       if (!this.on) { this.el.innerHTML = '<div class="dm off"></div>'; return; }
       if (this.cfg.variant === '35s') return this.render35();
       const lines = [];
-      const xs = this.err ? this.err : this.msg ? this.msg : this.pending ? this.pendText() : (this.entry != null ? 'x: ' + this.entryText() : 'x: ' + this.fmtNum(this.s.x));
+      const xs = this.err ? this.err : this.msg ? this.msg : this.prgmMode ? this.prgLine() : this.pending ? this.pendText() : (this.entry != null ? 'x: ' + this.entryText() : 'x: ' + this.fmtNum(this.s.x));
       let top;
       if (this.menu) { const items = this.menuItems(); const pg = items.slice(this.menuPage * 6, this.menuPage * 6 + 6); while (pg.length < 6) pg.push(['', null]); top = `<div class="smenu">${pg.map(it => `<span class="${it[0] ? '' : 'empty'}">${it[0]}</span>`).join('')}</div>`; }
+      else if (this.alphaMode) top = `<div class="dl">α ${U.escH(this.alphaReg)}_</div>`;
+      else if (this.prgmMode) top = `<div class="dl">PRGM ${this.pgm.length} steps</div>`;
+      else if (this.algMode) top = `<div class="dl">${U.escH(this.algStr || 'ALG')}</div>`;
       else top = `<div class="dl">y: ${this.fmtNum(this.s.y)}</div>`;
       const ann = [this.shift ? '⮣' : '', this.angle === 'rad' ? 'RAD' : this.angle === 'grad' ? 'GRAD' : '', this.menu && Math.ceil(this.menuItems().length / 6) > 1 ? '▲▼' : '', this.base !== 10 ? { 16: 'HEX', 8: 'OCT', 2: 'BIN' }[this.base] : ''].filter(Boolean);
       this.el.innerHTML = `<div class="dm two"><div class="ann">${ann.map(x => `<span>${x}</span>`).join('')}</div>` + (this.menu ? `<div class="dl">${xs}</div>${top}` : `${top}<div class="dl">${xs}</div>`) + '</div>';
       if (this.menu) { const dm = this.el.firstChild; const [l1, l2] = [dm.children[1], dm.children[2]]; dm.insertBefore(l1, null); }
     }
-    pendText() { const p = this.pending; return ({ sto: 'STO ', rcl: 'RCL ', fix: 'FIX ', sci: 'SCI ', eng: 'ENG ' }[p.k]) + (p.op ? { add: '+', sub: '−', mul: '×', div: '÷' }[p.op] + ' ' : '') + (p.dot ? '.' : '') + (p.digits || '') + '_ _'.slice(0, Math.max(1, 2 - (p.digits || '').length) * 2 - 1); }
+    pendText() { const p = this.pending; if (p.k === 'assign') return 'ASSIGN: press a key'; return ({ sto: 'STO ', rcl: 'RCL ', fix: 'FIX ', sci: 'SCI ', eng: 'ENG ', gto: 'GTO ', view: 'VIEW ', input: 'INPUT ', flag: ({ sf: 'SF ', cf: 'CF ', fs: 'FS? ', fc: 'FC? ' }[p.op]) }[p.k]) + (p.op ? { add: '+', sub: '−', mul: '×', div: '÷' }[p.op] + ' ' : '') + (p.dot ? '.' : '') + (p.digits || '') + '_ _'.slice(0, Math.max(1, 2 - (p.digits || '').length) * 2 - 1); }
     render35() {
-      const x = this.err ? this.err : this.msg ? this.msg : this.pending ? this.pendText() : this.entry != null ? this.entryText() : this.fmtNum(this.s.x);
-      const y = this.menuText || this.fmtNum(this.s.y);
+      const x = this.err ? this.err : this.msg ? this.msg : this.prgmMode ? this.prgLine() : this.pending ? this.pendText() : this.entry != null ? this.entryText() : this.fmtNum(this.s.x);
+      const y = this.menuText || (this.prgmMode ? 'PRGM ' + this.pgm.length + ' steps' : this.algMode ? (this.algStr || 'ALG').replace(/\*/g, '×').replace(/~/g, '−') : this.fmtNum(this.s.y));
       const ann = ['⮢', '⮣', 'RAD', 'GRAD', 'HEX', 'OCT', 'BIN', 'RPN'].map(t => `<span class="${(t === '⮢' && this.shift) || (t === '⮣' && this.gshift) || (t === 'RAD' && this.angle === 'rad') || (t === 'GRAD' && this.angle === 'grad') || t === 'RPN' || (t === { 16: 'HEX', 8: 'OCT', 2: 'BIN' }[this.base]) ? 'on' : 'off'}">${t}</span>`).join('');
-      this.el.innerHTML = `<div class="dm two s35"><div class="ann">${ann}</div><div class="dl r">${this.menuText ? this.menuText : y}</div><div class="dl r big">${x}</div></div>`;
+      this.el.innerHTML = `<div class="dm two s35"><div class="ann">${ann}</div><div class="dl r">${this.menuText ? U.escH(y) : y}</div><div class="dl r big">${x}</div></div>`;
     }
   }
 
@@ -218,7 +385,7 @@
     handle(a, kd) {
       if (this.menuSel) { const m = this.menuSel; const d = /^d(\d)$/.exec(a); this.menuSel = null; this.menuText = null; if (d && m[+d[1] - 1]) { const act = m[+d[1] - 1][1]; if (typeof act === 'function') act(); else super.handle(act, {}); } return; }
       const MENUS = {
-        modemenu: [['1DEG', 'deg'], ['2RAD', 'rad'], ['3GRD', 'grad'], ['4ALG', () => this.msg = 'RPN mode only'], ['5RPN', 'noop']],
+        modemenu: [['1DEG', 'deg'], ['2RAD', 'rad'], ['3GRD', 'grad'], ['4ALG', 'algmode'], ['5RPN', 'rpnmode']],
         dispmenu: [['1FX', 'fix'], ['2SC', 'sci'], ['3EN', 'eng'], ['4ALL', 'all']],
         clearmenu: [['1x', 'clx'], ['2VARS', () => { this.vars = {}; }], ['3ALL', 'reset'], ['4Σ', 'clsig']],
         basemenu: [['1DEC', 'decm'], ['2HEX', 'hexm'], ['3OCT', 'octm'], ['4BIN', 'binm']],
@@ -282,13 +449,16 @@
         case 'sl': case 'soy': case 'db': { this.finish(); const yr = this.s.x, cost = this.tvm.PV, sal = this.tvm.FV, life = this.tvm.n, fac = this.tvm.i; let dep = 0, acc = 0, book = cost;
           for (let y = 1; y <= yr; y++) { if (a === 'sl') dep = (cost - sal) / life; else if (a === 'soy') dep = (cost - sal) * (life - y + 1) / (life * (life + 1) / 2); else dep = Math.min(book * fac / 100 / life, book - sal); acc += dep; book -= dep; }
           this.s.x = E.round15(dep); this.s.y = E.round15(cost - sal - acc); this.lift = true; return; }
-        case 'price': case 'ytm': this.msg = 'Error 0'; return;
+        case 'price': case 'ytm': { this.finish(); const st = this.parseDate(this.s.y), mt = this.parseDate(this.s.x); this.running();
+          if (a === 'price') { const r = E.bondPrice(this.tvm.i, this.tvm.PMT, st, mt); this.lastX = this.s.x; this.s.x = this.chk(E.round15(r.price)); this.s.y = this.chk(E.round15(r.accrued)); this.tvm.PV = -this.s.x; }
+          else { const y = E.bondYield(Math.abs(this.tvm.PV), this.tvm.PMT, st, mt); this.lastX = this.s.x; this.s.x = this.chk(E.round15(y)); this.tvm.i = this.s.x; }
+          this.lift = true; return; }
         case 'xbar': this.op('mean'); return; case 'sdev12': this.op('sdev'); return;
         case 'xw': { this.finish(); const g = this.sigma; if (!g.sx) throw new E.CalcError('Error 2'); this.push(E.round15(g.sxy / g.sx)); this.lift = true; return; }
         case 'yhatr': this.op('linreg'); { this.finish(); const r = this.reg; const x = this.s.x; this.lastX = x; this.s.x = this.chk(r.a + r.b * x); this.push(E.round15(r.r)); [this.s.x, this.s.y] = [this.s.y, this.s.x]; } return;
         case 'xhatr': this.op('linreg'); { this.finish(); const r = this.reg; const y = this.s.x; this.lastX = y; this.s.x = this.chk((y - r.a) / r.b); this.push(E.round15(r.r)); [this.s.x, this.s.y] = [this.s.y, this.s.x]; } return;
         case 'onoff': this.on = !this.on; return;
-        case 'pse': case 'rs': case 'sst': case 'bst': case 'gto': case 'pr': case 'ptm': this.msg = 'Programs n/a'; return;
+        case 'ptm': this.pr = true; return;
         case 'mem': this.msg = 'P-08 r-20'; return;
         case 'sqrt12': this.op('sqrt'); return;
         case 'rcl12': case 'sto12': this.finish(); this.pending = { k: a === 'sto12' ? 'sto' : 'rcl', digits: '' }; this.cfg.regDigits = 1; return;
@@ -314,9 +484,10 @@
       let t;
       if (this.err) t = { main: this.err.startsWith('Error') ? this.err : 'Error 0', exp: '' };
       else if (this.msg) t = { main: this.msg, exp: '' };
+      else if (this.prgmMode) { const st = this.pgm[this.pc - 1]; t = { main: pad2(this.pc) + '-' + (this.pc ? ' ' + st.code : ''), exp: '' }; }
       else if (this.entry != null) { let s = this.entry; if (s.includes('E')) { const [m, e] = s.split('E'); t = { main: (m || '1') + (m.includes('.') ? '' : '.'), exp: e || ' ' }; } else { let [ip, fp] = (s || '0').split('.'); ip = ip.replace(/\B(?=(\d{3})+(?!\d))/g, ','); t = { main: ip + (s.includes('.') ? '.' + fp : '.'), exp: '' }; } }
       else t = this.fmtNum(this.s.x);
-      const ann = [['f', this.shift], ['g', this.gshift], ['BEGIN', this.beg], ['D.MY', this.dmy], ['C', false], ['PRGM', false]];
+      const ann = [['f', this.shift], ['g', this.gshift], ['BEGIN', this.beg], ['D.MY', this.dmy], ['C', false], ['ALG', this.algMode], ['PRGM', this.prgmMode]];
       this.el.innerHTML = `<div class="segwrap s12"><div class="segrow"><span class="segmain">${U.segSVG(t.main.replace(/ /g, ' '), 10, { commas: true })}</span>${t.exp ? `<span class="segexp">${U.segSVG(t.exp, 3)}</span>` : ''}</div><div class="ind">${ann.map(([l, on]) => `<span class="${on ? 'on' : 'off'}">${l}</span>`).join('')}</div></div>`;
     }
   }

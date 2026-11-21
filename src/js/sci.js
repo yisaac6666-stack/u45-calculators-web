@@ -342,7 +342,35 @@
         case 'tofrac': if (resultShown) { this.displayDec = false; } return true;
         case 'todec': if (resultShown) { this.displayDec = true; } return true;
         case 'noop': return true;
+        // ---- v1.5.4: keys that used to be placeholders ----
+        case 'help': U.helpPanel(this.model); return true;
+        case 'appinfo': U.info('Info — #' + this.model.id, `<p><b>${this.model.name}</b></p><p>Mode: ${this.mode} · Angle: ${String(this.angle).toUpperCase()} · Base: ${this.base}</p><p>Variables: ${Object.keys(this.vars).filter(k => this.vars[k] !== 0 && E.isNum(this.vars[k])).map(k => k + '=' + E.fmtPlain(this.vars[k], { mode: 'norm1', digits: 10 })).join(', ') || 'all 0'}</p><p>History: ${this.hist.length} entries</p><p>${U.escH(this.model.notes || '')}</p>`); return true;
+        case 'notes': U.notesPanel(this.model.id); return true;
+        case 'cas': return this.casMenu();
+        case 'copy': case 'cut': case 'capture': {
+          const t = a === 'capture' ? U.screenText(this.el) : (this.res ? (E.isNum(this.res.value) ? E.fmtPlain(this.res.value, { mode: 'norm1', digits: 15 }) : String(this.res.value)) : this.ed.source());
+          U.clipSet(t); if (a === 'cut' && !this.res) this.ed.clear(); this.flash(a === 'capture' ? 'Screen copied' : a === 'cut' ? 'Cut' : 'Copied'); return true;
+        }
+        case 'paste': { const t = U.clipGet(); if (!t) { if (this.hist.length) { this.startNew(); this.ed.fromTokens(this.hist[this.hist.length - 1].tokens); } else this.flash('Clipboard empty'); return true; } if (resultShown) this.startNew(); this.ed.put({ d: U.escH(t), s: t }); return true; }
+        case 'trigmenu': return this.menu('trig', [['sin', 'sin'], ['cos', 'cos'], ['tan', 'tan'], ['sin⁻¹', 'asin'], ['cos⁻¹', 'acos'], ['tan⁻¹', 'atan'], ['sinh', 'sinh'], ['cosh', 'cosh'], ['tanh', 'tanh']].map(([l, x]) => ({ label: l, fn: () => this.calcKey(x) })), { cols: 3 });
+        case 'testmenu': return this.menu('TEST', [['=', '=', '='], ['≠', '≠', '≠'], ['>', '&gt;', '>'], ['≥', '≥', '≥'], ['<', '&lt;', '<'], ['≤', '≤', '≤'], ['and', ' and ', ' and '], ['or', ' or ', ' or ']].map(([l, d, src]) => ({ label: U.escH(l), fn: () => this.insert({ d, s: src }) })), { cols: 2 });
+        case 'punctmenu': return this.menu('?!▸', ['?', '!', ':', ';', '"', "'", '_', '#', '@', '&'].map(c => ({ label: U.escH(c), fn: () => this.insert({ d: U.escH(c), s: c }) })), { cols: 5 });
+        case 'symmenu': return this.menu('Symbols', [['π', 'pi'], ['°', 'dms'], ['∠', 'angle'], ['ℯ', 'e'], ['√', 'sqrt'], ['∞', 'ins:∞'], ['±', 'ins:±'], ['→', 'ins:→']].map(([l, x]) => ({ label: l, fn: () => this.calcKey(x) })), { cols: 4 });
+        case 'newpage': this.hist = []; this.startNew(); this.page = (this.page || 1) + 1; this.flash('Page ' + this.page); return true;
+        case 'kconst': {
+          if (this.kconst) { this.kconst = null; this.flash('K off'); return true; }
+          const last = this.hist[this.hist.length - 1]; const m = last && /([+\-*/])([^+\-*/()]+)$/.exec(last.src);
+          if (!m) { this.flash('K: do a calculation first (e.g. 3×5=)'); return true; }
+          this.kconst = { op: m[1], v: m[2] }; this.flash('K ' + ({ '+': '+', '-': '−', '*': '×', '/': '÷' }[m[1]]) + m[2]); return true;
+        }
+        case 'divr': return (resultShown && this.startNew(true), this.ed.put({ d: '÷R', s: '⫽' }), true);
+        case 'factor': {
+          if (!this.ed.empty && !this.res) this.execute();
+          const v = this.res ? this.res.value : this.ans; if (!E.isNum(v) || v !== Math.round(v) || Math.abs(v) < 2) throw new E.CalcError('Math ERROR');
+          const f = E.factorInt(v); this.push(new MsgScreen(this, (v < 0 ? '−' : '') + f.map(([p, e]) => p + (e > 1 ? '<sup>' + e + '</sup>' : '')).join('×'))); return true;
+        }
       }
+      if (a.startsWith('info:')) { const i = a.indexOf('|'); U.info(a.slice(5, i < 0 ? undefined : i), i < 0 ? '' : a.slice(i + 1)); return true; }
       if (a.startsWith('base:')) { if (this.mode === 'BASE') { this.base = parseInt(a.slice(5)); } return true; }
       if (a.startsWith('mode:')) { this.setMode(a.slice(5)); return true; }
       if (a.startsWith('fix:')) { this.fmt = { mode: 'fix', n: parseInt(a.slice(4)), digits: this.cfg.digits }; return true; }
@@ -360,6 +388,21 @@
       if (t) { this.ed.put(t); if (a !== 'hypflag') this.hyp = false; return true; }
       return true;
     }
+    /** CAS-lite (offline, math.js): simplify, expand, d/dx and polynomial roots of the expression on the entry line. */
+    casMenu() {
+      const mjs = () => { const s = this.ed.source() || 'Ans';
+        return s.replace(/²/g, '^2').replace(/³/g, '^3').replace(/ˉ/g, '^(-1)').replace(/~/g, '-').replace(/π/g, 'pi').replace(/ℯ/g, 'e').replace(/ⅈ/g, 'i').replace(/\bX\b/g, 'x').replace(/ᴇ/g, 'e'); };
+      const M = E.math; const show = (t, r) => this.push(new MsgScreen(this, `<div class="cas">${U.escH(t)}:<br>${U.escH(r)}</div>`));
+      const run = (t, f) => () => { try { show(t, f(mjs())); } catch (e) { this.flash('CAS: ' + String(e.message || e).slice(0, 40)); } };
+      return this.menu('CAS', [
+        { label: 'Simplify', fn: run('simplify', s => M.simplify(s).toString()) },
+        { label: 'Expand', fn: run('expand', s => M.rationalize(s).toString()) },
+        { label: 'd/dx', fn: run('d/dx', s => M.simplify(M.derivative(s, 'x')).toString()) },
+        { label: 'd²/dx²', fn: run('d²/dx²', s => M.simplify(M.derivative(M.derivative(s, 'x'), 'x')).toString()) },
+        { label: 'Roots (poly in x)', fn: run('roots', s => { const p = M.rationalize(s, {}, true); const c = (p.coefficients || []).slice().reverse(); if (c.length < 2) throw new Error('not a polynomial'); return E.polyRoots(c).map(r => E.isCx(r) ? E.fmtComplex(r, { mode: 'norm1', digits: 10 }) : E.fmtPlain(E.round15(r), { mode: 'norm1', digits: 10 })).join(', '); }) },
+        { label: 'Factor integer', fn: () => this.calcKey('factor') },
+      ], { cols: 1 });
+    }
     insert(t) { if (this.res) this.startNew(); this.ed.put(t); }
     menu(title, items, o) { this.push(new MenuScreen(this, title, items, o)); return true; }
     source() {
@@ -373,6 +416,14 @@
       }
       if (this.ed.empty) { if (this.hist.length && this.cfg.repeatLast) { this.ed.fromTokens(this.hist[this.hist.length - 1].tokens); } else return true; }
       let src = this.source();
+      if (this.kconst && /^[\d.]+$/.test(src.trim())) src = src.trim() + this.kconst.op + this.kconst.v;
+      if (src.includes('⫽')) { // ÷R: integer quotient and remainder
+        const [l, r] = src.split('⫽'); const env0 = this.env(); const A = E.evaluate(l || 'Ans', env0), B = E.evaluate(r, env0);
+        if (!E.isNum(A) || !E.isNum(B) || A !== Math.trunc(A) || B !== Math.trunc(B) || B === 0) throw new E.CalcError('Math ERROR');
+        const q = Math.trunc(A / B), rem = A - q * B; this.preAns = this.ans; this.ans = q;
+        this.res = { value: q, label: 'Q=', tokens: this.ed.t.slice(), hint: {} }; this.hist.push({ tokens: this.ed.t.slice(), value: q, src }); this.histIdx = -1;
+        this.push(new ResultScreen(this, '÷R', [['Q=', q], ['R=', rem]], { per: 2 })); return true;
+      }
       let storeTo = null; const ai = src.lastIndexOf('→');
       if (ai >= 0) { storeTo = src.slice(ai + 1).trim(); src = src.slice(0, ai); if (!/^[A-Za-zθ]$/.test(storeTo)) throw new E.CalcError('Syntax ERROR'); if (!src) src = 'Ans'; }
       // multi-statement with ':' -> evaluate sequentially

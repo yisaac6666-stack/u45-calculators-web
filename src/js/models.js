@@ -20,7 +20,7 @@
       K('log', 'log', { s: ['10<sup>▭</sup>', 'pow10'], b: ['BIN', 'base:2'] }),
       K('ln', 'ln', { s: ['e<sup>▭</sup>', 'epow'], b: ['OCT', 'base:8'] }),
       K('(−)', 'neg', { s: ['∠', 'angle'], a: ['A', 'var:A'] }),
-      K('°′″', 'dms', { s: [v === 'b' ? 'FACT' : '←', v === 'b' ? 'msg:Prime factorisation:<br>use FACT in BASE-free COMP' : 'dms'], a: ['B', 'var:B'] }),
+      K('°′″', 'dms', { s: [v === 'b' ? 'FACT' : '←', v === 'b' ? 'factor' : 'dms'], a: ['B', 'var:B'] }),
       K('hyp', 'hyp', { s: ['Abs', 'abs'], a: ['C', 'var:C'] }),
       K('sin', 'sin', { s: ['sin⁻¹', 'asin'], a: ['D', 'var:D'] }),
       K('cos', 'cos', { s: ['cos⁻¹', 'acos'], a: ['E', 'var:E'] }),
@@ -50,7 +50,7 @@
   }
   function esModel(id, name, v, theme) {
     const top = v === 'b'
-      ? [K('Abs', 'abs', { s: ['÷R', 'msg:÷R: use Int( and MOD'] }), K('<i>x</i>³', 'cube', { s: ['∛▭', 'cbrt'], a: [':', 'colon'] }),
+      ? [K('Abs', 'abs', { s: ['÷R', 'divr'] }), K('<i>x</i>³', 'cube', { s: ['∛▭', 'cbrt'], a: [':', 'colon'] }),
          K('<i>x</i>⁻¹', 'inv', { s: ['<i>x</i>!', 'fact'] }), K('log<sub>▭</sub>▭', 'logab', { s: ['Σ', 'sigma'] })]
       : [K('CALC', 'calc', { s: ['SOLVE', 'solve'], a: ['=', 'eq'] }), K('∫▭', 'integ', { s: ['d/d<i>x</i>', 'deriv'], a: [':', 'colon'] }),
          K('<i>x</i>⁻¹', 'inv', { s: ['<i>x</i>!', 'fact'] }), K('log<sub>▭</sub>▭', 'logab', { s: ['Σ', 'sigma'] })];
@@ -213,7 +213,7 @@
         { cols: 5, kc: 'fn sm round', keys: [
           K('ln', 'ln', { s: ['<i>e</i><sup>▭</sup>', 'epow'] }), K('<sup>n</sup>/<sub>d</sub>', 'frac', { s: ['U<sup>n</sup>/<sub>d</sub>', 'mixed'] }), K('×10<sup>n</sup>', 'exp10', { s: ['<sup>n</sup>/<sub>d</sub>◀▶U<sup>n</sup>/<sub>d</sub>', 'mixedtoggle'] }),
           K('table', 'tablemode', { s: ['f◀▶d', 'sd'] }), K('clear', 'clear'),
-          K('π', 'pi', { s: ['hyp', 'hypflag'] }), K('sin', 'sin', { s: ['sin⁻¹', 'asin'] }), K('cos', 'cos', { s: ['cos⁻¹', 'acos'] }), K('tan', 'tan', { s: ['tan⁻¹', 'atan'] }), K('÷', 'div', { s: ['K', 'msg:Constant mode (K)<br>is not available'] }),
+          K('π', 'pi', { s: ['hyp', 'hypflag'] }), K('sin', 'sin', { s: ['sin⁻¹', 'asin'] }), K('cos', 'cos', { s: ['cos⁻¹', 'acos'] }), K('tan', 'tan', { s: ['tan⁻¹', 'atan'] }), K('÷', 'div', { s: ['K', 'kconst'] }),
           K('^', 'pow', { s: ['<sup>x</sup>√', 'nroot'] }), K('<i>x</i>⁻¹', 'inv', { s: ['%', 'pct'] }), K('(', 'lp', { s: ['%', 'pct'] }), K(')', 'rp', { s: ['▶%', 'pct'] }), K('×', 'mul'),
           K('<i>x</i>²', 'sq', { s: ['√', 'sqrt'] }), K('7', 'd7', { c: 'num round' }), K('8', 'd8', { c: 'num round' }), K('9', 'd9', { c: 'num round' }), K('−', 'sub'),
           K('<i>x</i><sub>yzt</sub><sup>abc</sup>', 'varcycle', { s: ['clear var', 'clearvar'] }), K('4', 'd4', { c: 'num round' }), K('5', 'd5', { c: 'num round' }), K('6', 'd6', { c: 'num round' }), K('+', 'add'),
@@ -292,9 +292,10 @@
           nf('7', 'd7', 'sin', 'sin'), nf('8', 'd8', 'cos', 'cos'), nf('9', 'd9', 'tan', 'tan'), K('×10<sup><i>x</i></sup>', 'exp10', { c: 'fn', s: ['π', 'pi'] }), K('log', 'log', { c: 'fn', s: ['10<sup><i>x</i></sup>', 'pow10'] }),
           nf('4', 'd4', 'hyp', 'hyp'), nf('5', 'd5', 'sin⁻¹', 'asin'), nf('6', 'd6', 'cos⁻¹', 'acos'), K('(', 'lp', { c: 'fn', s: ['ln', 'ln'] }), K('DEL', 'del', { c: 'del', s: ['INS', 'ins'] }),
           nf('1', 'd1', 'R↔P', 'pol'), nf('2', 'd2', 'Pol(', 'pol'), nf('3', 'd3', 'Rec(', 'rec'), K('×', 'mul', { c: 'op', s: ['<i>n</i>C<i>r</i>', 'ncr'] }), K('AC/ON', 'onac', { c: 'del', s: ['OFF', 'off'] }),
-          nf('0', 'd0', '÷', 'div'), nf('•', 'dot', 'tan⁻¹', 'atan'), K('<i>x</i>²', 'sq', { c: 'fn', s: ['√', 'sqrt'] }), K('+', 'add', { c: 'op', s: ['Ans', 'ans'] }), K('−', 'sub', { c: 'op', s: ['=', 'exe'] }) ] },
+          nf('0', 'd0', '÷', 'div'), nf('•', 'dot', 'tan⁻¹', 'atan'), K('<i>x</i>²', 'sq', { c: 'fn', s: ['√', 'sqrt'] }), K('+', 'add', { c: 'op', s: ['Ans', 'ans'] }), K('−', 'sub', { c: 'op', s: ['=', 'exe'] }),
+          K(')', 'rp', { c: 'fn' }), K('√', 'sqrt', { c: 'fn' }), K('÷', 'div', { c: 'op' }), K('Ans', 'ans', { c: 'fn' }), K('=', 'exe', { c: 'exe' }) ] },
       ],
-      notes: 'This compact model has no dedicated ÷, ) or = keys in the photo, so: SHIFT 0 = ÷, ALPHA SETUP = ), SHIFT − = "=" (EXE), SHIFT + = Ans, SHIFT x² = √. The physical keyboard Enter, /, ) keys also work. Several duplicated labels were rationalised.',
+      notes: 'A bottom row of dedicated ), √, ÷, Ans and = keys makes everyday arithmetic obvious (the physical keyboard /, ) and Enter keys also work). The original compact SHIFT/ALPHA shortcuts are unchanged: SHIFT 0 = ÷, ALPHA SETUP = ), SHIFT − = "=" (EXE), SHIFT + = Ans, SHIFT x² = √.',
     };
   }
   function compact41(id, name) {
@@ -404,7 +405,7 @@
   // =====================================================================
   function rpn42Model(id, name) {
     const F = 'fn sm', N = 'num';
-    const L = (t) => ({ a: [t, 'noop'] });
+    const L = (t) => ({ a: [t, 'alpha:' + t] });
     return {
       id, name, app: 'rpn42', w: 360, cls: 'rpn r42',
       theme: { body: 'linear-gradient(#2a2a2c,#151516)', cls: 'th-42 dark', vars: { '--bezel': '#bcbcb0', '--key': '#3b3b3e', '--kt': '#fff', '--knum': '#3b3b3e', '--knt': '#fff', '--kop': '#3b3b3e', '--kopt': '#fff', '--kshift': '#f2b230', '--kshiftt': '#222', '--ls': '#f2b230', '--la': '#9aa', '--lcd': '#c3c9b3', '--kr': '4px' } },
@@ -414,19 +415,19 @@
         { cols: 6, cls: 'soft', keys: [1, 2, 3, 4, 5, 6].map(i => K('', 'noop', { c: 'fn sm softk', menuKey: 'm' + i, tip: 'Menu key ' + i })) },
         { cols: 6, kc: F, keys: [
           K('Σ+', 'sigplus', Object.assign({ s: ['Σ−', 'sigminus'] }, L('A'))), K('1/<i>x</i>', 'inv', Object.assign({ s: ['<i>y</i><sup><i>x</i></sup>', 'ypow'] }, L('B'))), K('√<i>x</i>', 'sqrt', Object.assign({ s: ['<i>x</i>²', 'sq'] }, L('C'))),
-          K('LOG', 'log', Object.assign({ s: ['10<sup><i>x</i></sup>', 'pow10'] }, L('D'))), K('LN', 'ln', Object.assign({ s: ['<i>e</i><sup><i>x</i></sup>', 'epow'] }, L('E'))), K('XEQ', 'msg:Programs n/a', Object.assign({ s: ['GTO', 'msg:Programs n/a'] }, L('F'))),
-          K('STO', 'sto', { s: ['COMPLEX', 'complex'], a: ['G', 'noop'] }), K('RCL', 'rcl', { s: ['%', 'pct'], a: ['H', 'noop'] }), K('R↓', 'rdn', { s: ['π', 'pi'], a: ['I', 'noop'] }),
-          K('SIN', 'sin', { s: ['ASIN', 'asin'], a: ['J', 'noop'] }), K('COS', 'cos', { s: ['ACOS', 'acos'], a: ['K', 'noop'] }), K('TAN', 'tan', { s: ['ATAN', 'atan'], a: ['L', 'noop'] }) ] },
+          K('LOG', 'log', Object.assign({ s: ['10<sup><i>x</i></sup>', 'pow10'] }, L('D'))), K('LN', 'ln', Object.assign({ s: ['<i>e</i><sup><i>x</i></sup>', 'epow'] }, L('E'))), K('XEQ', 'xeq', Object.assign({ s: ['GTO', 'gto'] }, L('F'))),
+          K('STO', 'sto', { s: ['COMPLEX', 'complex'], a: ['G', 'alpha:G'] }), K('RCL', 'rcl', { s: ['%', 'pct'], a: ['H', 'alpha:H'] }), K('R↓', 'rdn', { s: ['π', 'pi'], a: ['I', 'alpha:I'] }),
+          K('SIN', 'sin', { s: ['ASIN', 'asin'], a: ['J', 'alpha:J'] }), K('COS', 'cos', { s: ['ACOS', 'acos'], a: ['K', 'alpha:K'] }), K('TAN', 'tan', { s: ['ATAN', 'atan'], a: ['L', 'alpha:L'] }) ] },
         { cols: '2fr 1fr 1fr 1fr 1fr', kc: F, keys: [
-          K('ENTER', 'enter', { s: ['ALPHA', 'msg:ALPHA mode n/a'], a: ['M', 'noop'] }), K('<i>x</i>≷<i>y</i>', 'swap', { s: ['LAST<i>x</i>', 'lastx'], a: ['N', 'noop'] }), K('+/−', 'chs', { s: ['MODES', 'menu:MODES'], a: ['O', 'noop'] }),
-          K('E', 'eex', { s: ['DISP', 'menu:DISP'], a: ['P', 'noop'] }), K('←', 'bksp', { s: ['CLEAR', 'menu:CLEAR'] }) ] },
+          K('ENTER', 'enter', { s: ['ALPHA', 'alphamode'], a: ['M', 'alpha:M'] }), K('<i>x</i>≷<i>y</i>', 'swap', { s: ['LAST<i>x</i>', 'lastx'], a: ['N', 'alpha:N'] }), K('+/−', 'chs', { s: ['MODES', 'menu:MODES'], a: ['O', 'alpha:O'] }),
+          K('E', 'eex', { s: ['DISP', 'menu:DISP'], a: ['P', 'alpha:P'] }), K('←', 'bksp', { s: ['CLEAR', 'menu:CLEAR'] }) ] },
         { cols: '1fr 1.2fr 1.2fr 1.2fr 1.2fr', keys: [
-          K('▲', 'up', { c: F, s: ['BST', 'up'] }), K('7', 'd7', { c: N, s: ['SOLVER', 'menu:SOLVER'], a: ['Q', 'noop'] }), K('8', 'd8', { c: N, s: ['∫<i>f</i>(<i>x</i>)', 'msg:∫f(x) needs a program'], a: ['R', 'noop'] }), K('9', 'd9', { c: N, s: ['MATRIX', 'msg:MATRIX n/a'], a: ['S', 'noop'] }), K('÷', 'div', { c: N, s: ['STAT', 'menu:STAT'], a: ['T', 'noop'] }),
-          K('▼', 'down', { c: F, s: ['SST', 'down'] }), K('4', 'd4', { c: N, s: ['BASE', 'menu:BASE'], a: ['U', 'noop'] }), K('5', 'd5', { c: N, s: ['CONVERT', 'menu:CONVERT'], a: ['V', 'noop'] }), K('6', 'd6', { c: N, s: ['FLAGS', 'msg:FLAGS n/a'], a: ['W', 'noop'] }), K('×', 'mul', { c: N, s: ['PROB', 'menu:PROB'], a: ['X', 'noop'] }),
-          K('', 'shift', { c: 'shift sm', tip: 'Shift' }), K('1', 'd1', { c: N, s: ['ASSIGN', 'msg:ASSIGN n/a'], a: ['Y', 'noop'] }), K('2', 'd2', { c: N, s: ['CUSTOM', 'msg:CUSTOM n/a'], a: ['Z', 'noop'] }), K('3', 'd3', { c: N, s: ['PGM.FCN', 'msg:Programs n/a'] }), K('−', 'sub', { c: N, s: ['PRINT', 'msg:No printer'], a: ['−', 'noop'] }),
-          K('EXIT', 'exit', { c: F, s: ['OFF', 'off'] }), K('0', 'd0', { c: N, s: ['TOP.FCN', 'menu:TOP'] }), K('•', 'dot', { c: N, s: ['SHOW', 'show'] }), K('R/S', 'msg:Programs n/a', { c: N, s: ['PRGM', 'msg:Programs n/a'] }), K('+', 'add', { c: N, s: ['CATALOG', 'menu:TOP'] }) ] },
+          K('▲', 'up', { c: F, s: ['BST', 'bst'] }), K('7', 'd7', { c: N, s: ['SOLVER', 'menu:SOLVER'], a: ['Q', 'alpha:Q'] }), K('8', 'd8', { c: N, s: ['∫<i>f</i>(<i>x</i>)', 'integ'], a: ['R', 'alpha:R'] }), K('9', 'd9', { c: N, s: ['MATRIX', 'menu:MATRIX'], a: ['S', 'alpha:S'] }), K('÷', 'div', { c: N, s: ['STAT', 'menu:STAT'], a: ['T', 'alpha:T'] }),
+          K('▼', 'down', { c: F, s: ['SST', 'sst'] }), K('4', 'd4', { c: N, s: ['BASE', 'menu:BASE'], a: ['U', 'alpha:U'] }), K('5', 'd5', { c: N, s: ['CONVERT', 'menu:CONVERT'], a: ['V', 'alpha:V'] }), K('6', 'd6', { c: N, s: ['FLAGS', 'menu:FLAGS'], a: ['W', 'alpha:W'] }), K('×', 'mul', { c: N, s: ['PROB', 'menu:PROB'], a: ['X', 'alpha:X'] }),
+          K('', 'shift', { c: 'shift sm', tip: 'Shift' }), K('1', 'd1', { c: N, s: ['ASSIGN', 'assign'], a: ['Y', 'alpha:Y'] }), K('2', 'd2', { c: N, s: ['CUSTOM', 'custom'], a: ['Z', 'alpha:Z'] }), K('3', 'd3', { c: N, s: ['PGM.FCN', 'menu:PGMFCN'] }), K('−', 'sub', { c: N, s: ['PRINT', 'print'], a: ['−', 'alpha:-'] }),
+          K('EXIT', 'exit', { c: F, s: ['OFF', 'off'] }), K('0', 'd0', { c: N, s: ['TOP.FCN', 'menu:TOP'] }), K('•', 'dot', { c: N, s: ['SHOW', 'show'] }), K('R/S', 'rs', { c: N, s: ['PRGM', 'prgm'] }), K('+', 'add', { c: N, s: ['CATALOG', 'menu:TOP'] }) ] },
       ],
-      notes: 'RPN with a 4-level stack (X Y Z T, LAST X) and 2-line display. Shift + key opens soft menus (MODES, DISP, CLEAR, CONVERT, PROB, STAT, BASE, COMPLEX, SOLVER) that are operated with the six blank keys under the display; ▲▼ page through menus, EXIT closes them. STO/RCL accept 00–99 and arithmetic (STO + 05). Programming, matrices, ∫f(x), ALPHA and flags are not simulated.',
+      notes: 'RPN with a 4-level stack (X Y Z T, LAST X) and 2-line display. Shift + key opens soft menus (MODES, DISP, CLEAR, CONVERT, PROB, STAT, BASE, COMPLEX, SOLVER, MATRIX, FLAGS, PGM.FCN, CUSTOM) that are operated with the six blank keys under the display; ▲▼ page through menus (with no menu open ▲ = R↑ and ▼ = R↓), EXIT closes them. STO/RCL accept 00–99 and arithmetic (STO + 05). Keystroke programs: SHIFT PRGM starts/ends program entry (▲▼ or SHIFT BST/SST move between lines, ← deletes a line), R/S runs or stops, XEQ runs from the top, SHIFT GTO nn jumps to a line; PGM.FCN has the tests X=Y? … X=0? (a false test skips the next line), ISG/DSE, RTN and PSE. SOLVER: SOLVE finds a root of the program f(x) from the guess in X, ∫f(x) integrates it from Y to X, QUAD (a,b,c in Z,Y,X), CUBIC (a..d in T..X), SYS2/SYS3 (coefficients in R01–R06 / R01–R12). MATRIX: DET2/INV2 of [[T,Z],[Y,X]], DET3 of R01–R09. FLAGS: SF/CF/FS?/FC? nn. ASSIGN puts the next function you press in the CUSTOM menu. SHIFT ALPHA types the letters printed beside the keys (ENTER or EXIT ends). PRINT shows the stack, registers and program in a panel.',
     };
   }
 
@@ -443,21 +444,21 @@
       cfg: { variant: '35s', digits: 12 },
       sections: [
         { cols: '1fr 1fr 1fr 1fr 2fr', keys: [
-          kk('R/S', 'msg:Programs n/a', ['FN#', 'msg:Programs n/a'], ['PRGM', 'msg:Programs n/a']), kk('GTO', 'msg:Programs n/a', ['ISG', 'noop'], ['RSE', 'noop']), kk('XEQ', 'msg:Programs n/a', ['RTN', 'noop'], ['ERL', 'noop']),
-          kk('MODE', 'modemenu', ['<i>x</i>?<i>y</i>', 'noop'], ['XTD', 'noop']), PAD('cross', { r: 2, labels: ['FLAGS', 'MEM', 'DISPLAY', 'CONST'] }),
-          kk('RCL', 'rcl', ['<i>x</i>≤', 'noop'], ['STD', 'noop']), kk('R↓', 'rdn', ['VIEW', 'noop'], ['R↑', 'rup']), kk('<i>x</i>↔<i>y</i>', 'swap', ['INPUT', 'noop'], ['PSE', 'noop']), kk('<i>i</i>', 'cmplxi', ['ARG', 'msg:ARG: use →POL'], ['BASE', 'basemenu']) ] },
+          kk('R/S', 'rs', ['FN#', 'fnsel'], ['PRGM', 'prgm']), kk('GTO', 'gto', ['ISG', 'isg'], ['DSE', 'dse']), kk('XEQ', 'xeq', ['RTN', 'rtn'], ['CLP', 'clp']),
+          kk('MODE', 'modemenu', ['<i>x</i>?<i>y</i>', 'xtest'], ['<i>x</i>?0', 'x0test']), PAD('cross', { r: 2, labels: ['FLAGS', 'MEM', 'DISPLAY', 'CONST'] }),
+          kk('RCL', 'rcl', ['<i>x</i>≤<i>y</i>?', 'test:xley'], ['STD', 'std']), kk('R↓', 'rdn', ['VIEW', 'view'], ['R↑', 'rup']), kk('<i>x</i>↔<i>y</i>', 'swap', ['INPUT', 'input'], ['PSE', 'pse']), kk('<i>i</i>', 'cmplxi', ['ARG', 'arg'], ['BASE', 'basemenu']) ] },
         { cols: 6, keys: [
-          kk('SIN', 'sin', ['HYP', 'msg:HYP: press SHIFT HYP then SIN'], ['ASIN', 'asin']), kk('COS', 'cos', ['π', 'pi'], ['ACOS', 'acos']), kk('TAN', 'tan', ['INTG', 'intgmenu'], ['ATAN', 'atan']),
+          kk('SIN', 'sin', ['HYP', 'hypnext'], ['ASIN', 'asin']), kk('COS', 'cos', ['π', 'pi'], ['ACOS', 'acos']), kk('TAN', 'tan', ['INTG', 'intgmenu'], ['ATAN', 'atan']),
           kk('√<i>x</i>', 'sqrt', ['<i>x</i>/<i>y</i>', 'xroot'], ['<i>x</i>²', 'sq']), kk('<i>y</i><sup><i>x</i></sup>', 'ypow', ['LOG', 'log'], ['LN', 'ln']), kk('1/<i>x</i>', 'inv', ['10<sup><i>x</i></sup>', 'pow10'], ['<i>e</i><sup><i>x</i></sup>', 'epow']) ] },
         { cols: '2fr 1fr 1fr 1fr 1fr', keys: [
-          kk('ENTER', 'enter', ['SHOW', 'show'], ['LASTx', 'lastx']), kk('+/−', 'chs', ['=', 'noop'], ['ABS', 'abs']), kk('E', 'eex', ['←ENG', 'eng'], ['RND', 'rnd']), kk('( )', 'noop', ['ENG→', 'eng'], ['1|', 'noop']), kk('←', 'bksp', ['UNDO', 'noop'], ['CLEAR', 'clearmenu']) ] },
+          kk('ENTER', 'enter', ['SHOW', 'show'], ['LASTx', 'lastx']), kk('+/−', 'chs', ['=', 'algeq'], ['ABS', 'abs']), kk('E', 'eex', ['←ENG', 'eng'], ['RND', 'rnd']), kk('( )', 'paren', ['ENG→', 'eng'], ['<i>n</i>!', 'fact']), kk('←', 'bksp', ['UNDO', 'undo'], ['CLEAR', 'clearmenu']) ] },
         { cols: '1fr 1.2fr 1.2fr 1.2fr 1.2fr', keys: [
-          kk('EQN', 'msg:Equations n/a', ['∫', 'msg:∫ needs an equation'], ['SOLVE', 'msg:SOLVE n/a']), kk('7', 'd7', ['→°F', 'msg:→°F: use CONVERT'], ['→°C', 'noop'], { c: N }), kk('8', 'd8', ['HMS→', 'tohr'], ['→HMS', 'tohms'], { c: N }), kk('9', 'd9', ['→RAD', 'torad'], ['→DEG', 'todeg'], { c: N }), kk('÷', 'div', ['%CHG', 'pctch'], ['%', 'pct'], { c: N }),
-          K('', 'shift', { c: 'shift sm', tip: 'Left shift' }), kk('4', 'd4', ['→lb', 'msg:→lb n/a'], ['→kg', 'noop'], { c: N }), kk('5', 'd5', ['→MILE', 'noop'], ['→KM', 'noop'], { c: N }), kk('6', 'd6', ['→in', 'noop'], ['→cm', 'noop'], { c: N }), kk('×', 'mul', ['<i>n</i>C<i>r</i>', 'comb'], ['<i>n</i>P<i>r</i>', 'perm'], { c: N }),
-          K('', 'gshift', { c: 'alpha sm', tip: 'Right shift' }), kk('1', 'd1', ['LOGIC', 'logicmenu'], ['BASE', 'basemenu'], { c: N }), kk('2', 'd2', ['→gal', 'noop'], ['→l', 'noop'], { c: N }), kk('3', 'd3', ['SEED', 'noop'], ['RAND', 'ran'], { c: N }), kk('−', 'sub', ['L.R.', 'lsmenu'], ['SUMS', 'sumsmenu'], { c: N }),
-          kk('C', 'clx', ['OFF', 'off'], ['ON', 'on']), kk('0', 'd0', ['␣', 'noop'], ['SPACE', 'noop'], { c: N }), kk('•', 'dot', ['/c', 'noop'], ['FDISP', 'noop'], { c: N }), kk('Σ+', 'sigplus', ['Σ−', 'sigminus'], ['s,σ', 'sdmenu'], { c: N }), kk('+', 'add', ['x̄,ȳ', 'mean'], ['$,σ', 'sdmenu'], { c: N }) ] },
+          kk('EQN', 'eqn', ['∫', 'integ'], ['SOLVE', 'solve']), kk('7', 'd7', ['→°F', 'conv:tof'], ['→°C', 'conv:toc'], { c: N }), kk('8', 'd8', ['HMS→', 'tohr'], ['→HMS', 'tohms'], { c: N }), kk('9', 'd9', ['→RAD', 'torad'], ['→DEG', 'todeg'], { c: N }), kk('÷', 'div', ['%CHG', 'pctch'], ['%', 'pct'], { c: N }),
+          K('', 'shift', { c: 'shift sm', tip: 'Left shift' }), kk('4', 'd4', ['→lb', 'conv:tolb'], ['→kg', 'conv:tokg'], { c: N }), kk('5', 'd5', ['→MILE', 'conv:tomile'], ['→KM', 'conv:tokm'], { c: N }), kk('6', 'd6', ['→in', 'conv:toin'], ['→cm', 'conv:tocm'], { c: N }), kk('×', 'mul', ['<i>n</i>C<i>r</i>', 'comb'], ['<i>n</i>P<i>r</i>', 'perm'], { c: N }),
+          K('', 'gshift', { c: 'alpha sm', tip: 'Right shift' }), kk('1', 'd1', ['LOGIC', 'logicmenu'], ['BASE', 'basemenu'], { c: N }), kk('2', 'd2', ['→gal', 'conv:togal'], ['→l', 'conv:tol'], { c: N }), kk('3', 'd3', ['SEED', 'seed'], ['RAND', 'ran'], { c: N }), kk('−', 'sub', ['L.R.', 'lsmenu'], ['SUMS', 'sumsmenu'], { c: N }),
+          kk('C', 'clx', ['OFF', 'off']), kk('0', 'd0', null, null, { c: N }), kk('•', 'dot', ['/c', 'fdenom'], ['FDISP', 'fdisp'], { c: N }), kk('Σ+', 'sigplus', ['Σ−', 'sigminus'], ['s,σ', 'sdmenu'], { c: N }), kk('+', 'add', ['x̄,ȳ', 'mean'], ['$,σ', 'sdmenu'], { c: N }) ] },
       ],
-      notes: 'RPN with 2-line display (Y over X). Yellow (left) and blue (right) shifts; MODE, DISPLAY, CLEAR, BASE, LOGIC, L.R., SUMS, s,σ, INTG and PROB menus show numbered choices – press the digit. Unit conversions not wired are shown as labels only. Equations, programs, SOLVE and ∫ are not simulated.',
+      notes: 'RPN with 2-line display (Y over X). Yellow (left) and blue (right) shifts; MODE (1 DEG 2 RAD 3 GRD 4 ALG 5 RPN), DISPLAY, CLEAR, BASE, LOGIC, L.R., SUMS, s,σ, INTG, x?y, x?0 and EQN menus show numbered choices – press the digit. Unit conversions →°F/→°C, →lb/→kg, →MILE/→KM, →in/→cm, →gal/→l work on X. Keystroke programs: right-shift PRGM starts/ends entry, R/S runs or stops, XEQ runs from the top, GTO nn jumps, RTN ends; tests x?y, x?0 and x≤y? skip the next line when false; ISG/DSE add or subtract 1 and skip when X passes Y; INPUT stops for a value; VIEW nn shows a register; PSE pauses; CLP clears the program. SOLVE finds a root of the program f(x) from the guess in X; ∫ integrates it from Y to X; FN# shows the program used. EQN: 1 LIN (a·x+b=0, a in Y, b in X), 2 QUAD (a,b,c in Z,Y,X), 3 CUB (a..d in T..X), 4 SYS2 (R01–R06), 5 SYS3 (R01–R12). In ALG mode ( ) and = work like an algebraic calculator; in RPN mode = acts as ENTER. HYP then SIN/COS/TAN gives hyperbolic functions; ARG gives the angle of a complex X; UNDO restores the stack before the last key; SEED seeds RAND; FDISP shows fractions (/c sets the largest denominator from X).',
     };
   }
 
@@ -474,15 +475,15 @@
       sections: [
         { cols: 10, cls: 'panel12', keys: [
           kk('<i>n</i>', 'n', ['AMORT', 'amort'], ['12×', 'n12']), kk('<i>i</i>', 'i', ['INT', 'int'], ['12÷', 'i12']), kk('PV', 'pv', ['NPV', 'npv'], ['CF<sub>0</sub>', 'cf0']), kk('PMT', 'pmt', ['RND', 'rnd'], ['CF<sub>j</sub>', 'cfj']), kk('FV', 'fv', ['IRR', 'irr'], ['N<sub>j</sub>', 'nj']),
-          kk('CHS', 'chs', ['RPN', 'noop'], ['DATE', 'date']), kk('7', 'd7', null, ['BEG', 'beg']), kk('8', 'd8', null, ['END', 'end']), kk('9', 'd9', null, ['MEM', 'mem']), kk('÷', 'div', null, ['↶', 'noop']),
+          kk('CHS', 'chs', ['RPN', 'rpnmode'], ['DATE', 'date']), kk('7', 'd7', null, ['BEG', 'beg']), kk('8', 'd8', null, ['END', 'end']), kk('9', 'd9', null, ['MEM', 'mem']), kk('÷', 'div', null, ['↶', 'undo']),
           kk('<i>y</i><sup><i>x</i></sup>', 'ypow', ['PRICE', 'price'], ['√<i>x</i>', 'sqrt12']), kk('1/<i>x</i>', 'inv', ['YTM', 'ytm'], ['<i>e</i><sup><i>x</i></sup>', 'epow']), kk('%T', 'pctt', ['SL', 'sl'], ['LN', 'ln']), kk('Δ%', 'pctch', ['SOYD', 'soy'], ['FRAC', 'fp']), kk('%', 'pct', ['DB', 'db'], ['INTG', 'ip']),
-          kk('EEX', 'eex', ['ALG', 'noop'], ['ΔDYS', 'ddys']), kk('4', 'd4', null, ['D.MY', 'dmy']), kk('5', 'd5', null, ['M.DY', 'mdy']), kk('6', 'd6', null, ['x̄w', 'xw']), kk('×', 'mul', null, ['<i>x</i>²', 'sq']),
-          kk('R/S', 'rs', ['P/R', 'pr'], ['PSE', 'pse']), kk('SST', 'sst', ['Σ', 'clsig12'], ['BST', 'bst']), kk('R↓', 'rdn', ['PRGM', 'msg:Programs n/a'], ['GTO', 'gto']), kk('<i>x</i>≷<i>y</i>', 'swap', ['FIN', 'clfin'], ['<i>x</i>≤<i>y</i>', 'noop']), kk('CL<i>x</i>', 'clx', ['REG', 'clreg'], ['<i>x</i>=0', 'noop']),
-          kk('E<br>N<br>T<br>E<br>R', 'enter', ['PREFIX', 'clprefix'], ['=', 'noop'], { r: 2, c: 'fn tall enter12' }), kk('1', 'd1', null, ['x̂,r', 'xhatr']), kk('2', 'd2', null, ['ŷ,r', 'yhatr']), kk('3', 'd3', null, ['n!', 'fact']), kk('−', 'sub', null, ['←', 'bksp']),
-          kk('ON', 'onoff', ['OFF', 'onoff']), K('f', 'fshift', { c: 'shift' }), K('g', 'gshift', { c: 'alpha' }), kk('STO', 'sto', null, ['(', 'noop']), kk('RCL', 'rcl', null, [')', 'noop']),
+          kk('EEX', 'eex', ['ALG', 'algmode'], ['ΔDYS', 'ddys']), kk('4', 'd4', null, ['D.MY', 'dmy']), kk('5', 'd5', null, ['M.DY', 'mdy']), kk('6', 'd6', null, ['x̄w', 'xw']), kk('×', 'mul', null, ['<i>x</i>²', 'sq']),
+          kk('R/S', 'rs', ['P/R', 'pr'], ['PSE', 'pse']), kk('SST', 'sst', ['Σ', 'clsig12'], ['BST', 'bst']), kk('R↓', 'rdn', ['PRGM', 'clp'], ['GTO', 'gto']), kk('<i>x</i>≷<i>y</i>', 'swap', ['FIN', 'clfin'], ['<i>x</i>≤<i>y</i>', 'test:xley']), kk('CL<i>x</i>', 'clx', ['REG', 'clreg'], ['<i>x</i>=0', 'test:xeq0']),
+          kk('E<br>N<br>T<br>E<br>R', 'enter', ['PREFIX', 'clprefix'], ['=', 'algeq'], { r: 2, c: 'fn tall enter12' }), kk('1', 'd1', null, ['x̂,r', 'xhatr']), kk('2', 'd2', null, ['ŷ,r', 'yhatr']), kk('3', 'd3', null, ['n!', 'fact']), kk('−', 'sub', null, ['←', 'bksp']),
+          kk('ON', 'onoff', ['OFF', 'onoff']), K('f', 'fshift', { c: 'shift' }), K('g', 'gshift', { c: 'alpha' }), kk('STO', 'sto', null, ['(', 'lpar']), kk('RCL', 'rcl', null, [')', 'rpar']),
           kk('0', 'd0', null, ['x̄', 'xbar']), kk('•', 'dot', null, ['s', 'sdev12']), kk('Σ+', 'sigplus', null, ['Σ−', 'sigminus']), kk('+', 'add', null, ['LST<i>x</i>', 'lastx']) ] },
       ],
-      notes: 'Landscape financial RPN. TVM with n, i, PV, PMT, FV (enter value + key; press the key alone to compute), g 12× / 12÷, BEG/END; cash flows CF0, CFj, Nj with NPV/IRR; AMORT, INT (simple interest), dates (D.MY/M.DY, DATE, ΔDYS), depreciation SL/SOYD/DB, statistics Σ+, x̄, s, ŷ,r, x̂,r, x̄w; f + digit sets the number of decimals. PRICE/YTM and programming are not simulated. f CLEAR Σ/FIN/REG/PREFIX are on SST, x≷y, CLx and ENTER.' + (plat ? ' Some function labels on this photo were garbled; the standard labels for each key are used.' : ''),
+      notes: 'Landscape financial RPN. TVM with n, i, PV, PMT, FV (enter value + key; press the key alone to compute), g 12× / 12÷, BEG/END; cash flows CF0, CFj, Nj with NPV/IRR; AMORT, INT (simple interest), dates (D.MY/M.DY, DATE, ΔDYS), depreciation SL/SOYD/DB, statistics Σ+, x̄, s, ŷ,r, x̂,r, x̄w; f + digit sets the number of decimals. Bonds: i = yield %, PMT = coupon %, settlement date ENTER maturity date, then f PRICE (price in X, accrued interest in Y), or put the price in PV and press f YTM. Keystroke programs: f P/R starts/ends program entry (line codes shown as on the original), R/S runs or stops, SST/BST step, g GTO nn jumps, g PSE pauses, g x≤y and g x=0 skip the next line when false, f PRGM clears the program. f ALG / f RPN switch modes; in ALG g ( g ) and g = work algebraically (in RPN g = acts as ENTER). g ↶ undoes the last key. f CLEAR Σ/FIN/REG/PREFIX are on SST, x≷y, CLx and ENTER.' + (plat ? ' Some function labels on this photo were garbled; the standard labels for each key are used.' : ''),
     };
   }
 
@@ -500,7 +501,7 @@
       sp(1), K('0', 'd0', { c: N }), K('00', 'd00', { c: N }), K('•', 'dot', { c: N }), K('PRT', 'prt', { c: F }), K('REPRINT', 'reprint', { c: 'fn xs' }) ]
       : [
       K('TIME', 'time', { c: F }), K('IT', 'it', { c: F }), K('COST', 'cost', { c: F }), K('SELL', 'sell', { c: F }), K('MAR', 'mar', { c: F }), K('PRT', 'prt', { c: F }), K('REPRINT', 'reprint', { c: 'fn xs reprint' }), K('FEED', 'feed', { c: F }),
-      K('CA', 'ca', { c: F }), K('▶', 'bksp', { c: F }), K('+/−', 'chs', { c: F }), K('#', 'nonadd', { c: F, tip: 'Non-add / date (Q/N)' }), K('CONNECT', 'noop', { c: 'fn xs' }), K('Δ%', 'dpct', { c: F }), K('▲', 'up', { c: 'fn sm blue', tip: 'Rate up' }), K('▼', 'down', { c: 'fn sm blue', tip: 'Rate down' }),
+      K('CA', 'ca', { c: F }), K('▶', 'bksp', { c: F }), K('+/−', 'chs', { c: F }), K('#', 'nonadd', { c: F, tip: 'Non-add / date (Q/N)' }), K('CONNECT', 'info:CONNECT|<p>On the desk model, CONNECT links the calculator to a PC or POS system by cable. U-45 works offline on your device, so there is nothing to connect to.</p><p>To move results out: use <b>Copy</b> above the calculator, the tape <b>Export</b>, or <b>Share</b> on the tool bar.</p>', { c: 'fn xs', tip: 'CONNECT (information)' }), K('Δ%', 'dpct', { c: F }), K('▲', 'up', { c: 'fn sm blue', tip: 'Rate up' }), K('▼', 'down', { c: 'fn sm blue', tip: 'Rate down' }),
       K('%', 'pct', { c: F }), K('7', 'd7', { c: N }), K('8', 'd8', { c: N }), K('9', 'd9', { c: N }), K('−', 'sub', { c: 'del' }), K('TAX−', 'taxm', { c: 'fn sm tax' }), K('TAX+', 'taxp', { c: 'fn sm tax' }), K('M✱', 'mtot', { c: 'op' }),
       K('MU<br>MD', 'mumd', { c: F }), K('4', 'd4', { c: N }), K('5', 'd5', { c: N }), K('6', 'd6', { c: N }), K('+<br>=', 'addeq', { c: 'op tall', r: 3 }), K('÷', 'div', { c: 'op' }), K('×', 'mul', { c: 'op' }), K('M◇', 'msub', { c: 'op' }),
       K('C', 'c', { c: 'del' }), K('1', 'd1', { c: N }), K('2', 'd2', { c: N }), K('3', 'd3', { c: N }), K('G✱', 'gt', { c: 'op' }), K('✱', 'tot', { c: 'op' }), K('M−', 'mminus', { c: 'op' }),
@@ -545,15 +546,15 @@
           K('Y=', 'yeq', { s: ['STAT PLOT', 'statplot'] }), K('WINDOW', 'window', { s: ['TBLSET', 'tblset'] }), K('ZOOM', 'zoom', { s: ['FORMAT', 'draw'] }), K('TRACE', 'trace', { s: ['CALC', 'calcmenu'] }), K('GRAPH', 'graph', { s: ['TABLE', 'table'] }) ] },
         { cols: '1fr 1fr 1fr 2fr', cls: 'ktop', kc: F, keys: [
           K('2nd', 'shift', { c: 'shift sm' }), K('MODE', 'mode', { s: ['QUIT', 'quit'] }), K('DEL', 'del', { s: ['INS', 'ins'] }), PAD('cross', { r: 2 }),
-          K('ALPHA', 'alpha', { c: 'alpha sm', s: ['A-LOCK', 'alpha'] }), K('X,T,θ,<i>n</i>', 'varx', { s: ['LINK', 'msg:Link not available'] }), K('STAT', 'stat', { s: ['LIST', 'list'] }) ] },
+          K('ALPHA', 'alpha', { c: 'alpha sm', s: ['A-LOCK', 'alpha'] }), K('X,T,θ,<i>n</i>', 'varx', { s: ['LINK', 'info:LINK|<p>LINK sends programs, lists and variables to another calculator or a computer over a cable. U-45 runs offline on your device without a cable link.</p><p>To move numbers out: press <b>Copy</b> above the calculator, use History → Export, or Share on the tool bar. To bring numbers in, paste them with the keyboard (Ctrl+V) or type them.</p>'] }), K('STAT', 'stat', { s: ['LIST', 'list'] }) ] },
         { cols: 5, kc: F, keys: [
-          K('MATH', 'mathmenu', { s: ['TEST', 'msg:TEST: type = < > with ALPHA'], a: V('A') }), K('APPS', 'apps', { s: ['ANGLE', 'angle'], a: V('B') }), K('PRGM', 'prgm', { s: ['DRAW', 'draw'], a: V('C') }), K('VARS', 'vars', { s: ['DISTR', 'distmenu'] }), K('CLEAR', 'clear'),
+          K('MATH', 'mathmenu', { s: ['TEST', 'testmenu'], a: V('A') }), K('APPS', 'apps', { s: ['ANGLE', 'angle'], a: V('B') }), K('PRGM', 'prgm', { s: ['DRAW', 'draw'], a: V('C') }), K('VARS', 'vars', { s: ['DISTR', 'distmenu'] }), K('CLEAR', 'clear'),
           K('<i>x</i>⁻¹', 'inv', { s: ['MATRIX', 'matmenu'], a: V('D') }), K('SIN', 'sin', { s: ['SIN⁻¹', 'asin'], a: V('E') }), K('COS', 'cos', { s: ['COS⁻¹', 'acos'], a: V('F') }), K('TAN', 'tan', { s: ['TAN⁻¹', 'atan'], a: V('G') }), K('^', 'pow', { c: O, s: ['π', 'pi'], a: V('H') }),
           K('<i>x</i>²', 'sq', { s: ['√', 'sqrt'], a: V('I') }), K(',', 'comma', { s: ['EE', 'exp10'], a: V('J') }), K('(', 'lp', { s: ['{', 'ins:{'], a: V('K') }), K(')', 'rp', { s: ['}', 'ins:}'], a: V('L') }), K('÷', 'div', { c: O, s: ['<i>e</i>', 'e'], a: V('M') }),
-          K('LOG', 'log', { s: ['10<sup><i>x</i></sup>', 'pow10'], a: V('N') }), K('7', 'd7', { c: N, s: ['u', 'noop'], a: V('O') }), K('8', 'd8', { c: N, s: ['v', 'noop'], a: V('P') }), K('9', 'd9', { c: N, s: ['w', 'noop'], a: V('Q') }), K('×', 'mul', { c: O, s: ['[', 'ins:['], a: V('R') }),
+          K('LOG', 'log', { s: ['10<sup><i>x</i></sup>', 'pow10'], a: V('N') }), K('7', 'd7', { c: N, s: ['u', 'ins:u'], a: V('O') }), K('8', 'd8', { c: N, s: ['v', 'ins:v'], a: V('P') }), K('9', 'd9', { c: N, s: ['w', 'ins:w'], a: V('Q') }), K('×', 'mul', { c: O, s: ['[', 'ins:['], a: V('R') }),
           K('LN', 'ln', { s: ['<i>e</i><sup><i>x</i></sup>', 'epow'], a: V('S') }), K('4', 'd4', { c: N, s: ['L4', 'list'], a: V('T') }), K('5', 'd5', { c: N, s: ['L5', 'list'], a: V('U') }), K('6', 'd6', { c: N, s: ['L6', 'list'], a: V('V') }), K('−', 'sub', { c: O, s: [']', 'ins:]'], a: V('W') }),
-          K('STO▸', 'stoarrow', { s: ['RCL', 'recall'], a: V('X') }), K('1', 'd1', { c: N, s: ['L1', 'list'], a: V('Y') }), K('2', 'd2', { c: N, s: ['L2', 'list'], a: V('Z') }), K('3', 'd3', { c: N, s: ['L3', 'list'], a: V('θ') }), K('+', 'add', { c: O, s: ['MEM', 'reset'], a: ['"', 'noop'] }),
-          K('ON', 'on', { s: ['OFF', 'off'] }), K('0', 'd0', { c: N, s: ['CATALOG', 'catalog'], a: ['␣', 'noop'] }), K('.', 'dot', { c: N, s: ['<i>i</i>', 'i'], a: [':', 'colon'] }), K('(−)', 'neg', { c: N, s: ['ANS', 'ans'], a: ['?', 'noop'] }), K('ENTER', 'exe', { c: O, s: ['ENTRY', 'entry'], a: ['SOLVE', 'solveapp'] }) ] },
+          K('STO▸', 'stoarrow', { s: ['RCL', 'recall'], a: V('X') }), K('1', 'd1', { c: N, s: ['L1', 'list'], a: V('Y') }), K('2', 'd2', { c: N, s: ['L2', 'list'], a: V('Z') }), K('3', 'd3', { c: N, s: ['L3', 'list'], a: V('θ') }), K('+', 'add', { c: O, s: ['MEM', 'reset'], a: ['"', 'ins:"'] }),
+          K('ON', 'on', { s: ['OFF', 'off'] }), K('0', 'd0', { c: N, s: ['CATALOG', 'catalog'], a: ['␣', 'ins: '] }), K('.', 'dot', { c: N, s: ['<i>i</i>', 'i'], a: [':', 'colon'] }), K('(−)', 'neg', { c: N, s: ['ANS', 'ans'], a: ['?', 'ins:?'] }), K('ENTER', 'exe', { c: O, s: ['ENTRY', 'entry'], a: ['SOLVE', 'solveapp'] }) ] },
       ],
       notes: 'Monochrome graphing model. Home screen with history; Y= editor (Y1–Y6), WINDOW, ZOOM (box-free: In/Out/Standard/Trig/Fit), TRACE, GRAPH, TABLE/TBLSET, 2nd CALC (value, zero, minimum, maximum, intersect, dy/dx, ∫f(x)dx), STAT (list editor, 1-Var/2-Var and linear/quadratic/exponential regressions, scatter STAT PLOT), MATH (fractions, cube root, abs, round, nDeriv/fnInt), MATRIX, DISTR (normal/binomial/Poisson), ALPHA SOLVE (numeric solver). Programs, LINK and list literals {…} are not simulated.',
     };
@@ -580,13 +581,13 @@
           K('SHIFT', 'shift', { c: 'shift sm' }), K('OPTN', 'optn'), K('VARS', 'vars', { s: ['PRGM', 'prgm'] }), K('MENU', 'menu', { s: ['SET UP', 'gmode'] }), PAD('replay', { r: 2, label: 'REPLAY' }),
           K('ALPHA', 'alpha', { c: 'alpha sm', s: ['A-LOCK', 'alpha'] }), K('<i>x</i>²', 'sq', { s: ['√', 'sqrt'], a: ['<i>r</i>', 'var:r'] }), K('^', 'pow', { s: ['<sup>x</sup>√', 'nroot'], a: ['θ', 'var:θ'] }), K('EXIT', 'quit', { s: ['QUIT', 'quit'] }) ] },
         { cols: 6, kc: F, keys: [
-          K('X,θ,T', 'varx', { s: ['∠', 'noop'], a: A('A') }), K('log', 'log', { s: ['10<sup><i>x</i></sup>', 'pow10'], a: A('B') }), K('ln', 'ln', { s: ['<i>e</i><sup><i>x</i></sup>', 'epow'], a: A('C') }), K('sin', 'sin', { s: ['sin⁻¹', 'asin'], a: A('D') }), K('cos', 'cos', { s: ['cos⁻¹', 'acos'], a: A('E') }), K('tan', 'tan', { s: ['tan⁻¹', 'atan'], a: A('F') }),
+          K('X,θ,T', 'varx', { s: ['∠', 'angle'], a: A('A') }), K('log', 'log', { s: ['10<sup><i>x</i></sup>', 'pow10'], a: A('B') }), K('ln', 'ln', { s: ['<i>e</i><sup><i>x</i></sup>', 'epow'], a: A('C') }), K('sin', 'sin', { s: ['sin⁻¹', 'asin'], a: A('D') }), K('cos', 'cos', { s: ['cos⁻¹', 'acos'], a: A('E') }), K('tan', 'tan', { s: ['tan⁻¹', 'atan'], a: A('F') }),
           K('<sup>a</sup>⁄<sub>b</sub>', 'frac', { s: ['<sup>□</sup>⁄<sub>□</sub>', 'mixed'], a: A('G') }), K('F↔D', 'sd', { a: A('H') }), K('(', 'lp', { s: ['∛', 'cbrt'], a: A('I') }), K(')', 'rp', { s: ['<i>x</i>⁻¹', 'inv'], a: A('J') }), K(',', 'comma', { a: A('K') }), K('→', 'stoarrow', { a: A('L') }) ] },
         { cols: 5, keys: [
-          K('7', 'd7', { c: N, s: ['CAPTURE', 'noop'], a: A('M') }), K('8', 'd8', { c: N, s: ['CLIP', 'noop'], a: A('N') }), K('9', 'd9', { c: N, s: ['PASTE', 'noop'], a: A('O') }), K('DEL', 'del', { c: 'del', s: ['INS', 'ins'] }), K('AC/ON', 'onac', { c: 'del', s: ['OFF', 'off'] }),
+          K('7', 'd7', { c: N, s: ['CAPTURE', 'capture'], a: A('M') }), K('8', 'd8', { c: N, s: ['CLIP', 'copy'], a: A('N') }), K('9', 'd9', { c: N, s: ['PASTE', 'paste'], a: A('O') }), K('DEL', 'del', { c: 'del', s: ['INS', 'ins'] }), K('AC/ON', 'onac', { c: 'del', s: ['OFF', 'off'] }),
           K('4', 'd4', { c: N, s: ['CATALOG', 'catalog'], a: A('P') }), K('5', 'd5', { c: N, s: ['FORMAT', 'format'], a: A('Q') }), K('6', 'd6', { c: N, a: A('R') }), K('×', 'mul', { c: 'op', s: ['{', 'ins:{'], a: A('S') }), K('÷', 'div', { c: 'op', s: ['}', 'ins:}'], a: A('T') }),
           K('1', 'd1', { c: N, s: ['List', 'list'], a: A('U') }), K('2', 'd2', { c: N, s: ['Mat', 'matmenu'], a: A('V') }), K('3', 'd3', { c: N, a: A('W') }), K('+', 'add', { c: 'op', s: ['[', 'ins:['], a: A('X') }), K('−', 'sub', { c: 'op', s: [']', 'ins:]'], a: A('Y') }),
-          K('0', 'd0', { c: N, s: ['<i>i</i>', 'i'], a: A('Z') }), K('.', 'dot', { c: N, s: ['=', 'eq'], a: ['SPACE', 'noop'] }), K('EXP', 'exp10', { c: N, s: ['π', 'pi'], a: ['"', 'noop'] }), K('(−)', 'neg', { c: N, s: ['Ans', 'ans'] }), K('EXE', 'exe', { c: 'exe', s: ['↵', 'exe'] }) ] },
+          K('0', 'd0', { c: N, s: ['<i>i</i>', 'i'], a: A('Z') }), K('.', 'dot', { c: N, s: ['=', 'eq'], a: ['SPACE', 'ins: '] }), K('EXP', 'exp10', { c: N, s: ['π', 'pi'], a: ['"', 'ins:"'] }), K('(−)', 'neg', { c: N, s: ['Ans', 'ans'] }), K('EXE', 'exe', { c: 'exe', s: ['↵', 'exe'] }) ] },
       ],
       notes: 'F-key graphing model. MENU opens the icon menu (Run-Matrix, Statistics, Graph, Table, Equation, Matrix, Distribution, Base-N, System) – pick with the cursor + EXE or the number. F1–F6 act on the soft-key bar; SHIFT F1–F6 give Trace, Zoom, V-Window, Sketch, G-Solv (root, max, min, intersect, ∫dx) and G↔T. ' + (color ? 'Colour screen with natural input.' : 'Monochrome dot screen, linear input.') + ' Programs, e-Activity, spreadsheet, CAPTURE/CLIP/PASTE are not simulated.',
     };
@@ -642,8 +643,8 @@
         appItems: [['Function', '📈', '#2c7fd0', 'graph'], ['Statistics 2Var', '📊', '#e0703a', 'stat'], ['Solve', 'x=?', '#2c9c5a', 'solve'], ['Linear Solver', 'EQ', '#7a5cc4', 'eqn'], ['Matrix', '[ ]', '#4a8fa8', 'matrix'], ['Distributions', 'Dist', '#b38b22', 'dist'], ['Base', 'HEX', '#666', 'base'], ['Home', '⌂', '#333', 'run'], ['Settings', '⚙', '#555', 'settings']], gridCols: 3 },
       sections: [
         { cols: 5, cls: 'ktop dark', kc: 'fn xs', keys: [
-          K('Apps', 'apps', { s: ['Info', 'msg:Info'] }), K('Symb', 'symb', { s: ['Setup', 'tblset'] }), PAD('ring', { r: 3 }), K('Help', 'msg:Help is not available', {}), K('Esc', 'quit', { s: ['Clear', 'clear'] }),
-          K('⌂', 'home', { s: ['Settings', 'gmode'] }), K('Plot', 'plot', { s: ['Setup', 'window'] }), K('View', 'zoom', { s: ['Setup', 'window'] }), K('CAS', 'msg:CAS not available:<br>numeric Home only', { s: ['Settings', 'gmode'] }),
+          K('Apps', 'apps', { s: ['Info', 'appinfo'] }), K('Symb', 'symb', { s: ['Setup', 'tblset'] }), PAD('ring', { r: 3 }), K('Help', 'help', { tip: 'Help: notes and every key of this calculator' }), K('Esc', 'quit', { s: ['Clear', 'clear'] }),
+          K('⌂', 'home', { s: ['Settings', 'gmode'] }), K('Plot', 'plot', { s: ['Setup', 'window'] }), K('View', 'zoom', { s: ['Setup', 'window'] }), K('CAS', 'cas', { s: ['Settings', 'gmode'] }),
           sp(1), K('Num', 'num', { s: ['Setup', 'tblset'] }), K('Menu', 'mathmenu', { s: ['Paste', 'entry'] }), sp(1) ] },
         { cols: 6, kc: F, keys: [
           K('Vars', 'vars', { s: ['Chars', 'catalog'], a: V('A') }), K('Toolbox', 'mathmenu', { s: ['Mem', 'reset'], a: V('B') }), K('▭▭', 'frac', { s: ['Units', 'convmenu'], a: V('C') }), K('<i>x</i>t θ<i>n</i>', 'varx', { s: ['Define', 'yeq'], a: V('D') }), K('<sup>a</sup>⁄<sub>b</sub>', 'sd', { a: V('E') }), K('⌫', 'del', { s: ['Clear', 'clear'] }),
@@ -651,9 +652,9 @@
           K('<i>x</i>²', 'sq', { s: ['√', 'sqrt'], a: V('L') }), K('+/−', 'neg', { s: ['|<i>x</i>|', 'abs'], a: V('M') }), K('( )', 'lp', { s: [')', 'rp'], a: V('N') }), K(',', 'comma', { s: ['Eval', 'exe'], a: V('O') }), K('Enter', 'exe', { w: 2, c: 'fn sm wide', s: ['≈', 'todec'] }) ] },
         { cols: 5, keys: [
           K('EEX', 'exp10', { c: F, s: ['Sto ▸', 'stoarrow'], a: V('P') }), K('7', 'd7', { c: N, s: ['List', 'list'], a: V('Q') }), K('8', 'd8', { c: N, s: ['{ }', 'ins:{'], a: V('R') }), K('9', 'd9', { c: N, s: ['Matrix', 'matmenu'], a: V('S') }), K('÷', 'div', { c: N, s: ['<i>x</i>⁻¹', 'inv'], a: V('T') }),
-          K('ALPHA', 'alpha', { c: 'alpha sm' }), K('4', 'd4', { c: N, s: ['Matrix', 'matmenu'], a: V('U') }), K('5', 'd5', { c: N, s: ['[ ]', 'ins:['], a: V('V') }), K('6', 'd6', { c: N, s: ['≤≥≠', 'ins:≠'], a: V('W') }), K('×', 'mul', { c: N, s: ['∠', 'noop'], a: V('X') }),
-          K('Shift', 'shift', { c: 'shift sm' }), K('1', 'd1', { c: N, s: ['Program', 'prgm'], a: V('Y') }), K('2', 'd2', { c: N, s: ['<i>i</i>', 'i'], a: V('Z') }), K('3', 'd3', { c: N, s: ['π', 'pi'], a: ['#', 'noop'] }), K('−', 'sub', { c: N, s: ['Base', 'basemenu'] }),
-          K('On', 'onac', { c: F, s: ['Off', 'off'] }), K('0', 'd0', { c: N, s: ['Notes', 'msg:Notes not available'] }), K('.', 'dot', { c: N, s: ['=', 'eq'] }), K('␣', 'noop', { c: N, s: ['_', 'noop'] }), K('+', 'add', { c: N, s: ['Ans', 'ans'] }) ] },
+          K('ALPHA', 'alpha', { c: 'alpha sm' }), K('4', 'd4', { c: N, s: ['Matrix', 'matmenu'], a: V('U') }), K('5', 'd5', { c: N, s: ['[ ]', 'ins:['], a: V('V') }), K('6', 'd6', { c: N, s: ['≤≥≠', 'ins:≠'], a: V('W') }), K('×', 'mul', { c: N, s: ['∠', 'angle'], a: V('X') }),
+          K('Shift', 'shift', { c: 'shift sm' }), K('1', 'd1', { c: N, s: ['Program', 'prgm'], a: V('Y') }), K('2', 'd2', { c: N, s: ['<i>i</i>', 'i'], a: V('Z') }), K('3', 'd3', { c: N, s: ['π', 'pi'], a: ['#', 'ins:#'] }), K('−', 'sub', { c: N, s: ['Base', 'basemenu'] }),
+          K('On', 'onac', { c: F, s: ['Off', 'off'] }), K('0', 'd0', { c: N, s: ['Notes', 'notes'] }), K('.', 'dot', { c: N, s: ['=', 'eq'] }), K('␣', 'ins: ', { c: N, s: ['_', 'ins:_'], tip: 'Space' }), K('+', 'add', { c: N, s: ['Ans', 'ans'] }) ] },
       ],
       notes: 'Colour graphing model with Home view (textbook entry, ≈ result alongside exact), Apps (Function, Statistics 2Var, Solve, Linear Solver, Matrix, Distributions, Base), Symb (function list F1–F6), Plot, Num (table), View (zoom), Toolbox (math menu) and Vars. The CAS view, Help, Notes and programming are not simulated (CAS key shows a notice).',
     };
@@ -673,19 +674,19 @@
       sections: [
         { cols: '1fr 2.2fr 1fr', cls: 'ktop', kc: F, keys: [
           K('esc', 'quit'), PAD('ring', { r: 3, center: ['', 'exe'] }), K('⌂ on', 'apps', { s: ['off', 'off'] }),
-          K('🗒', 'quit', { tip: 'Scratchpad' }), K('doc', 'apps', { s: ['+page', 'noop'] }),
+          K('🗒', 'quit', { tip: 'Scratchpad' }), K('doc', 'apps', { s: ['+page', 'newpage'] }),
           K('tab', 'down'), K('menu', 'mathmenu', { s: ['context', 'optn'] }) ] },
-        { cols: 4, kc: F, keys: [K('ctrl', 'shift', { c: 'alpha sm' }), K('shift', 'noop', { tip: 'Capitals' }), K('var', 'vars', { s: ['sto→', 'stoarrow'] }), K('del', 'del', { s: ['clear', 'clear'] })] },
+        { cols: 4, kc: F, keys: [K('ctrl', 'shift', { c: 'alpha sm' }), K('shift', 'shift', { tip: 'Shift (same as ctrl: second functions; letter keys already type capitals)' }), K('var', 'vars', { s: ['sto→', 'stoarrow'] }), K('del', 'del', { s: ['clear', 'clear'] })] },
         { cols: 7, keys: [
-          K('=', 'eq', { c: F, s: ['≠≥▸', 'ins:≠'] }), K('trig', 'sin', { c: F, s: ['sin⁻¹', 'asin'], tip: 'sin (trig palette simplified)' }), K('7', 'd7', { c: N }), K('8', 'd8', { c: N }), K('9', 'd9', { c: N }), K('▭▭', 'frac', { c: F, s: ['∞β°', 'dms'] }), K('📖', 'catalog', { c: F, s: ['Σ', 'sigma'] }),
-          K('^', 'pow', { c: F, s: ['<sup>n</sup>√', 'nroot'] }), K('<i>x</i>²', 'sq', { c: F, s: ['√', 'sqrt'] }), K('4', 'd4', { c: N }), K('5', 'd5', { c: N }), K('6', 'd6', { c: N }), K('×', 'mul', { c: F, s: ['""', 'noop'] }), K('÷', 'div', { c: F, s: ['⁄', 'frac'] }),
+          K('=', 'eq', { c: F, s: ['≠≥▸', 'ins:≠'] }), K('trig', 'trigmenu', { c: F, s: ['sin⁻¹', 'asin'], tip: 'Trig chooser: sin, cos, tan and inverses' }), K('7', 'd7', { c: N }), K('8', 'd8', { c: N }), K('9', 'd9', { c: N }), K('▭▭', 'frac', { c: F, s: ['∞β°', 'dms'] }), K('📖', 'catalog', { c: F, s: ['Σ', 'sigma'] }),
+          K('^', 'pow', { c: F, s: ['<sup>n</sup>√', 'nroot'] }), K('<i>x</i>²', 'sq', { c: F, s: ['√', 'sqrt'] }), K('4', 'd4', { c: N }), K('5', 'd5', { c: N }), K('6', 'd6', { c: N }), K('×', 'mul', { c: F, s: ['""', 'ins:""'] }), K('÷', 'div', { c: F, s: ['⁄', 'frac'] }),
           K('<i>e</i><sup><i>x</i></sup>', 'epow', { c: F, s: ['ln', 'ln'] }), K('10<sup><i>x</i></sup>', 'pow10', { c: F, s: ['log', 'log'] }), K('1', 'd1', { c: N }), K('2', 'd2', { c: N }), K('3', 'd3', { c: N }), K('+', 'add', { c: F }), K('−', 'sub', { c: F }),
-          K('(', 'lp', { c: F, s: ['[ ]', 'ins:['] }), K(')', 'rp', { c: F, s: ['{ }', 'ins:{'] }), K('0', 'd0', { c: N }), K('.', 'dot', { c: N, s: ['capture', 'noop'] }), K('(−)', 'neg', { c: N, s: ['ans', 'ans'] }), K('enter', 'exe', { c: F, w: 2, s: ['≈', 'todec'] }) ] },
+          K('(', 'lp', { c: F, s: ['[ ]', 'ins:['] }), K(')', 'rp', { c: F, s: ['{ }', 'ins:{'] }), K('0', 'd0', { c: N }), K('.', 'dot', { c: N, s: ['capture', 'capture'] }), K('(−)', 'neg', { c: N, s: ['ans', 'ans'] }), K('enter', 'exe', { c: F, w: 2, s: ['≈', 'todec'] }) ] },
         { cols: 9, cls: 'alpha9', keys: [
-          K('EE', 'exp10', { c: 'fn xs alk' }), ...'ABCDEFG'.split('').map(L), K('?!▸', 'noop', { c: 'fn xs alk' }),
-          K('π▸', 'pi', { c: 'fn xs alk' }), ...'HIJKLMN'.split('').map(L), K('⚑', 'noop', { c: 'fn xs alk' }),
+          K('EE', 'exp10', { c: 'fn xs alk' }), ...'ABCDEFG'.split('').map(L), K('?!▸', 'punctmenu', { c: 'fn xs alk', tip: 'Punctuation' }),
+          K('π▸', 'pi', { c: 'fn xs alk' }), ...'HIJKLMN'.split('').map(L), K('⚑', 'symmenu', { c: 'fn xs alk', tip: 'Symbols' }),
           K(',', 'comma', { c: 'fn xs alk' }), ...'OPQRSTU'.split('').map(L), K('↵', 'exe', { c: 'fn xs alk' }),
-          ...'VWXYZ'.split('').map(L), K('␣', 'noop', { c: 'fn xs alk', w: 2 }), sp(2) ] },
+          ...'VWXYZ'.split('').map(L), K('␣', 'ins: ', { c: 'fn xs alk', w: 2, tip: 'Space' }), sp(2) ] },
       ],
       notes: 'Touchpad CAS-style colour model: Scratchpad calculator with templates and history, documents home (⌂) with Graphs, Lists & Spreadsheet (statistics), Solver, Equations, Matrix, Distributions. Letter keys enter variables A–Z directly. The trig key types sin (ctrl gives sin⁻¹; cos/tan via the menu). Symbolic CAS algebra, documents/pages, Python and the touchpad gestures are simplified (the touchpad works as a cursor pad, its centre as Enter).',
     };
@@ -707,14 +708,14 @@
           PAD('cross', { r: 2 }), K('⌂', 'home', { c: 'fn sm homek', tip: 'Home' }), K('OK', 'exe', { tip: 'OK' }),
           K('↩', 'quit', { tip: 'Back' }), K('⏻', 'off', { c: 'fn sm powk', tip: 'Power' }) ] },
         { cols: 6, kc: F, keys: [
-          K('shift', 'shift', { c: 'shift sm' }), K('alpha', 'alpha', { c: 'alpha sm' }), K('<i>x,n,t</i>', 'varx', { s: ['cut', 'noop'], a: [':', 'colon'] }), K('var', 'vars', { s: ['copy', 'noop'], a: [';', 'noop'] }), K('toolbox', 'mathmenu', { s: ['paste', 'entry'], a: ['"', 'noop'] }), K('⌫', 'del', { s: ['clear', 'clear'], a: ['%', 'noop'] }),
-          K('<i>e</i><sup><i>x</i></sup>', 'epow', { s: ['[', 'ins:['], a: V('A') }), K('ln', 'ln', { s: [']', 'ins:]'], a: V('B') }), K('log', 'log', { s: ['{', 'ins:{'], a: V('C') }), K('<i>i</i>', 'i', { s: ['}', 'ins:}'], a: V('D') }), K(',', 'comma', { s: ['_', 'noop'], a: V('E') }), K('<i>x</i><sup><i>y</i></sup>', 'pow', { s: ['→', 'stoarrow'], a: V('F') }),
-          K('sin', 'sin', { s: ['asin', 'asin'], a: V('G') }), K('cos', 'cos', { s: ['acos', 'acos'], a: V('H') }), K('tan', 'tan', { s: ['atan', 'atan'], a: V('I') }), K('π', 'pi', { s: ['=', 'eq'], a: V('J') }), K('√', 'sqrt', { s: ['<', 'noop'], a: V('K') }), K('<i>x</i>²', 'sq', { s: ['>', 'noop'], a: V('L') }) ] },
+          K('shift', 'shift', { c: 'shift sm' }), K('alpha', 'alpha', { c: 'alpha sm' }), K('<i>x,n,t</i>', 'varx', { s: ['cut', 'cut'], a: [':', 'colon'] }), K('var', 'vars', { s: ['copy', 'copy'], a: [';', 'ins:;'] }), K('toolbox', 'mathmenu', { s: ['paste', 'paste'], a: ['"', 'ins:"'] }), K('⌫', 'del', { s: ['clear', 'clear'], a: ['%', 'pct'] }),
+          K('<i>e</i><sup><i>x</i></sup>', 'epow', { s: ['[', 'ins:['], a: V('A') }), K('ln', 'ln', { s: [']', 'ins:]'], a: V('B') }), K('log', 'log', { s: ['{', 'ins:{'], a: V('C') }), K('<i>i</i>', 'i', { s: ['}', 'ins:}'], a: V('D') }), K(',', 'comma', { s: ['_', 'ins:_'], a: V('E') }), K('<i>x</i><sup><i>y</i></sup>', 'pow', { s: ['→', 'stoarrow'], a: V('F') }),
+          K('sin', 'sin', { s: ['asin', 'asin'], a: V('G') }), K('cos', 'cos', { s: ['acos', 'acos'], a: V('H') }), K('tan', 'tan', { s: ['atan', 'atan'], a: V('I') }), K('π', 'pi', { s: ['=', 'eq'], a: V('J') }), K('√', 'sqrt', { s: ['<', 'src:<|&lt;'], a: V('K') }), K('<i>x</i>²', 'sq', { s: ['>', 'src:>|&gt;'], a: V('L') }) ] },
         { cols: 5, keys: [
           K('7', 'd7', { c: N, a: V('M') }), K('8', 'd8', { c: N, a: V('N') }), K('9', 'd9', { c: N, a: V('O') }), K('(', 'lp', { c: N, a: V('P') }), K(')', 'rp', { c: N, a: V('Q') }),
           K('4', 'd4', { c: N, a: V('R') }), K('5', 'd5', { c: N, a: V('S') }), K('6', 'd6', { c: N, a: V('T') }), K('×', 'mul', { c: N, a: V('U') }), K('÷', 'div', { c: N, a: V('V') }),
-          K('1', 'd1', { c: N, a: V('W') }), K('2', 'd2', { c: N, a: V('X') }), K('3', 'd3', { c: N, a: V('Y') }), K('+', 'add', { c: N, a: V('Z') }), K('−', 'sub', { c: N, a: ['␣', 'noop'] }),
-          K('0', 'd0', { c: N, a: ['?', 'noop'] }), K('.', 'dot', { c: N, a: ['!', 'fact'] }), K('×10<sup><i>x</i></sup>', 'exp10', { c: N }), K('Ans', 'ans', { c: N }), K('EXE', 'exe', { c: N }) ] },
+          K('1', 'd1', { c: N, a: V('W') }), K('2', 'd2', { c: N, a: V('X') }), K('3', 'd3', { c: N, a: V('Y') }), K('+', 'add', { c: N, a: V('Z') }), K('−', 'sub', { c: N, a: ['␣', 'ins: '] }),
+          K('0', 'd0', { c: N, a: ['?', 'ins:?'] }), K('.', 'dot', { c: N, a: ['!', 'fact'] }), K('×10<sup><i>x</i></sup>', 'exp10', { c: N }), K('Ans', 'ans', { c: N }), K('EXE', 'exe', { c: N }) ] },
       ],
       notes: 'Round-key colour graphing model. Starts on the app grid (Calculation, Grapher, Equations, Statistics, Probability, Solver, Matrices, Base, Settings); ⌂ returns to it, ↩ goes back, OK/EXE select. Grapher has f/g/h… expressions, graph with zoom & trace, and a table. Toolbox is the math catalogue. Python, sequences and regression model choice beyond linear/quadratic/exponential are not simulated; cut/copy are no-ops (paste re-inserts the last entry).',
     };

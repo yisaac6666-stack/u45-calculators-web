@@ -363,6 +363,9 @@ header.top h1.brand{font-size:20px;font-weight:900;letter-spacing:1.2px;color:#F
 #u45-lock button,#u45-block button{background:#5b7cff;color:#fff;border:0;border-radius:10px;padding:10px 18px;font-size:15px;font-weight:700;cursor:pointer}
 #u45-lock .err{color:#FF5252;font-weight:700;min-height:1.2em}
 #u45-lock .hint{font-size:12px;color:#7a8496}
+#u45-lock .lock-btns{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;align-items:center}
+#u45-lock button.skip{background:transparent;color:#fff;border:2px solid #aab2c0;font-weight:700}
+#u45-lock button.skip:hover,#u45-lock button.skip:focus{border-color:#fff;background:#1b1d22}
 
 /* =====================================================================
  * Task 2 — three bundled offline fonts, numbered keys, 6 max-contrast groups
@@ -415,6 +418,14 @@ body.classic-keys .klegend{opacity:.45}
 .calc .key.alk .kno,.calc .key.xs .kno{font-size:6.5px;top:0;left:0;border-radius:4px 0 4px 0;padding:1px 2px}
 .calc .key.alk .kf,.calc .key.xs .kf{padding-left:11px}
 body.no-knum .calc .key.alk .kf,body.no-knum .calc .key.xs .kf{padding-left:0}
+/* Compact pocket keys are narrow: keep face text clear of the numbering badge. */
+.calc.compact .key:not(.round):not(.pill):not(.oval) .kf{padding-left:13px;box-sizing:border-box}
+body.no-knum .calc.compact .key .kf{padding-left:0}
+/* v1.5.4: number badges sit on the top-left corner of the key, half outside it, so they never cover the key's face text */
+.calc .key:not(.round):not(.pill):not(.oval) .kno{top:-6px;left:-6px;font-size:7px;padding:1px 2px;border-radius:3px}
+.calc .key.alk .kno,.calc .key.xs .kno{top:-5px;left:-5px;font-size:6px;border-radius:3px;padding:0 1.5px}
+.calc .key.alk .kf,.calc .key.xs .kf{padding-left:0}
+.calc.compact .key:not(.round):not(.pill):not(.oval) .kf{padding-left:0}
 .notes .feat-list{padding-left:2.8em}
 /* phone: keep the model jump-select inside the header (no horizontal page scroll) */
 header.top{min-width:0;max-width:100vw;box-sizing:border-box}

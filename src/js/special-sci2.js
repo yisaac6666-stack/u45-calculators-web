@@ -94,7 +94,7 @@
     pre(S, act) {
       if (S.pend === 'psto' || S.pend === 'prcl') {
         const pd = S.pend; S.pend = null; const m = /^d(\d)$/.exec(act); if (!m) return true; const r = 'R' + m[1];
-        if (pd === 'psto') { S.regs[r] = S.fresh || S.buf.empty ? S.ansBig : bnEval(S, S.buf.src()); S.msg = 'STO ' + r + ' = ' + BN.str(S, S.regs[r], S.base); } else S.typeTok(r, r);
+        if (pd === 'psto') { S.regs[r] = S.fresh || S.buf.empty ? S.ansBig : bnEval(S, S.buf.src()); S.msg = 'STO ' + r + ' = ' + BN.str(S, S.regs[r], S.base); S.fresh = true; /* the next digit starts a new entry */ } else S.typeTok(r, r);
         return true;
       }
       if (act.startsWith('hex:')) { const d = act.slice(4); if (parseInt(d, 16) >= S.base) return notDigit(S, d); S.typeTok(d); return true; }
@@ -179,7 +179,7 @@
   }
   const STATV = ['LX', 'LY', 'xbar', 'sx', 'px', 'sumx2', 'sumx', 'nn', 'ybar', 'sumxy', 'med', 'q1', 'q3', 'corr'];
   D.stat = {
-    family: 'sci', styleName: 'algebraic with a statistics data editor (enter data in DATA, then 1-VAR, 2-VAR, REG or DIST)', histLines: 2,
+    family: 'sci', digitRegs: true, styleName: 'algebraic with a statistics data editor (enter data in DATA, then 1-VAR, 2-VAR, REG or DIST)', histLines: 2,
     init(S) { DataEd.init(S, ['X', 'Y']); S.reg = null; },
     ind(S) { return 'STAT n=' + DataEd.list(S, 'X').length + (S.reg ? ' ' + S.reg.kind.toUpperCase() : ''); },
     render(S) { if (S.de.on && !S.menu && !S.form && !S.info) { S.scr.innerHTML = S.indHtml() + `<div class="sx-body">${DataEd.html(S, 'STAT')}</div>`; return true; } return false; },
@@ -224,7 +224,7 @@
       { kind: 'sn', title: 'Count of data', human: 'n for 1, 1, 2, 3', exp: 4, keys: ['data', 'd1', 'exe', 'd1', 'exe', 'd2', 'exe', 'd3', 'exe', 'ac', 'ins:nn|n', 'exe'] },
       { kind: 'smed', title: 'Median', human: 'Median of 8, 1, 5', exp: 5, keys: ['data', 'd8', 'exe', 'd1', 'exe', 'd5', 'exe', 'ac', 'ins:med|Med', 'exe'] },
     ],
-    notes: ['Statistics & probability calculator with an on-screen data editor. Sample standard deviation sx uses n−1; σx uses n. Quartiles use the median-of-halves method.', 'Distribution functions are original numerical code (series, continued fractions and Simpson integration) accurate to about 9 significant digits.'],
+    notes: ['Memory: STO then a digit 0–9 stores the entry (or the last answer) in register R0–R9; RCL then a digit types R0–R9 into the entry (7 STO 1, then RCL 1 EXE gives 7).', 'Statistics & probability calculator with an on-screen data editor. Sample standard deviation sx uses n−1; σx uses n. Quartiles use the median-of-halves method.', 'Distribution functions are original numerical code (series, continued fractions and Simpson integration) accurate to about 9 significant digits.'],
     model({ K, I, PAD }) {
       return {
         w: 360,
@@ -236,7 +236,7 @@
             I('x̄', 'xbar', 'x̄', 'Mean of X', { s: ['ȳ', 'ins:ybar|ȳ', 'Mean of Y'] }), I('σx', 'px', 'σx', 'Population s.d.', { s: ['sx', 'ins:sx|sx', 'Sample s.d.'] }), I('n', 'nn', 'n', 'Number of data', { s: ['Σx', 'ins:sumx|Σx', 'Sum of X'] }), I('ŷ', 'yhat(', 'ŷ(', 'Predict y from the regression', { s: ['x̂', 'ins:xhat(|x̂(', 'Predict x'] })] },
           { cols: 6, cls: 'kfn', kc: 'fn sm', keys: [K('<i>n</i>C<i>r</i>', 'ncr', { s: ['<i>n</i>P<i>r</i>', 'npr'] }), K('<i>x</i>!', 'fact'), K('Ran#', 'ran', { s: ['RanInt', 'ranint'] }), I('Med', 'med', 'Med', 'Median', { s: ['Q1', 'ins:q1|Q1', 'First quartile'] }), I('r', 'corr', 'r', 'Correlation coefficient', { s: ['Q3', 'ins:q3|Q3', 'Third quartile'] }), I('z', 'zsc(', 'z(', 'z-score', { s: ['Σxy', 'ins:sumxy|Σxy', 'Sum of products'] }),
             K('<i>x</i>²', 'sq', { s: ['√', 'sqrt'] }), K('<i>x</i><sup>y</sup>', 'pow', { s: ['<i>x</i>⁻¹', 'inv'] }), K('ln', 'ln', { s: ['e<sup>x</sup>', 'epow'] }), K('log', 'log', { s: ['10<sup>x</sup>', 'pow10'] }), K('%', 'pct'), K('Abs', 'abs'),
-            K('(', 'lp'), K(')', 'rp'), K(',', 'comma'), K('STO', 'sto', { c: 'fn' }), K('RCL', 'rcl', { c: 'fn' }), K('π', 'pi', { a: ['A', 'var:A'] })] },
+            K('(', 'lp'), K(')', 'rp'), K(',', 'comma'), K('STO', 'sto', { c: 'fn', tip: 'STO then 0–9 stores into register R0–R9' }), K('RCL', 'rcl', { c: 'fn', tip: 'RCL then 0–9 recalls register R0–R9' }), K('π', 'pi')] },
           { cols: 5, cls: 'knum', keys: [
             K('7', 'd7', { c: 'num' }), K('8', 'd8', { c: 'num' }), K('9', 'd9', { c: 'num' }), K('DEL', 'del', { c: 'del' }), K('AC', 'ac', { c: 'del' }),
             K('4', 'd4', { c: 'num' }), K('5', 'd5', { c: 'num' }), K('6', 'd6', { c: 'num' }), K('×', 'mul', { c: 'op' }), K('÷', 'div', { c: 'op' }),

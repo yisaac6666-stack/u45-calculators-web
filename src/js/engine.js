@@ -14,7 +14,7 @@
   //  postfix ² ³ ˉ(inverse) ° (DMS) ᴰ ʳ ᵍ (angle unit markers)  ⌟ (a⌟b fraction)  ℙ nPr ℂ nCr ∠ polar
   //  π ℯ ⅈ constants  identifiers: function names / variables;  infix words and or xor xnor  ; = (equation)
   const POSTFIX = { '²': 1, '³': 1, 'ˉ': 1, '!': 1, '%': 1, '°': 1, 'ᴰ': 1, 'ʳ': 1, 'ᵍ': 1, '′': 1, '″': 1 };
-  const SINGLE = '+-*/^(),~!%²³ˉ°ᴰʳᵍ⌟ℙℂ∠πℯⅈ=:[];′″×÷−';
+  const SINGLE = '+-*/^(),~!%²³ˉ°ᴰʳᵍ⌟ℙℂ∠πℯⅈ=:[];′″×÷−≠≥≤<>';
   function tokenize(src) {
     const out = []; let i = 0;
     while (i < src.length) {
@@ -61,7 +61,7 @@
     const peek = () => toks[p];
     const next = () => toks[p++];
     const isOp = (t, v) => t && t.t === 'op' && t.v === v;
-    const BP = { '=': 2, 'or': 5, 'xor': 5, 'xnor': 5, 'and': 6, '+': 10, '-': 10, '*': 20, '/': 20, 'ℙ': 30, 'ℂ': 30, '∠': 30, '^': 40, '⌟': 45 };
+    const BP = { '=': 2, '≠': 3, '≥': 3, '≤': 3, '<': 3, '>': 3, 'or': 5, 'xor': 5, 'xnor': 5, 'and': 6, '+': 10, '-': 10, '*': 20, '/': 20, 'ℙ': 30, 'ℂ': 30, '∠': 30, '^': 40, '⌟': 45 };
     const IMPL = cfg.implicitHigh === false ? 20 : 25;
     function startsOperand(t) {
       if (!t) return false;
@@ -238,6 +238,7 @@
   function gcd(a, b) { a = Math.abs(a); b = Math.abs(b); if (a !== Math.floor(a) || b !== Math.floor(b)) ERR('Math ERROR'); while (b) { [a, b] = [b, a % b]; } return a; }
   function lcm(a, b) { if (!a || !b) return 0; return Math.abs(a * b) / gcd(a, b); }
 
+  function num0(v) { if (!isNum(v)) ERR('Math ERROR'); return v; }
   function binop(op, a, b, env) {
     if (env.base) return baseBin(op, a, b, env);
     switch (op) {
@@ -256,6 +257,7 @@
       case 'ℂ': return nCr(a, b);
       case '∠': { const th = toRad(b, env); return cleanCx(math.complex({ r: a, phi: th })); }
       case '=': return { eq: true, l: a, r: b };
+      case '≠': return +(Math.abs(num0(a) - num0(b)) > 1e-12 * Math.max(1, Math.abs(num0(a)))); case '≥': return +(num0(a) >= num0(b) - 1e-12); case '≤': return +(num0(a) <= num0(b) + 1e-12); case '<': return +(num0(a) < num0(b)); case '>': return +(num0(a) > num0(b));
       case 'and': case 'or': case 'xor': case 'xnor': return baseBin(op, a, b, env);
     }
     ERR('Syntax ERROR');
@@ -632,6 +634,7 @@
     return round15(s);
   }
   function irr(cfs) {
+    if (!Array.isArray(cfs) || !cfs.length) ERR('Error 5'); // no cash flows entered
     const f = (x) => npv(x, cfs);
     let x = 10; for (let it = 0; it < 100; it++) { const fx = f(x), h = 1e-5, d = (f(x + h) - f(x - h)) / (2 * h); if (!d) break; const xn = x - fx / d; if (Math.abs(xn - x) < 1e-10) { x = xn; break; } x = Math.max(-99.9, xn); }
     if (!isFinite(x) || Math.abs(f(x)) > 1e-6 * Math.max(1, Math.abs(cfs[0].v))) ERR('Error 5');
@@ -787,5 +790,37 @@
     return { d: sg * d, m, s, str: (sg < 0 ? '-' : '') + d + '°' + m + '°' + trimZeros(s.toFixed(2)) + '°' };
   }
 
-  return { HINT, CalcError, tokenize, parse, evaluate, evalNode, makeEnv, formatNumber, fmtPlain, fmtComplex, toFraction, exactForm, integrate, derivative, solve, polyRoots, solveLinear, stats, regression, tvmSolve, tvmEq, npv, irr, amort, csm, toBase, fromBase, toDMS, round15, isNum, isCx, isMat, toMat, math, FUNCS, trimZeros, gcd, groupDigits };
+  // v1.5.4: unit conversions used by the RPN conversion keys (exact SI/NIST factors)
+  const UNIT_CONV = {
+    tof: (c) => c * 9 / 5 + 32, toc: (f) => (f - 32) * 5 / 9,
+    tolb: (kg) => kg / 0.45359237, tokg: (lb) => lb * 0.45359237,
+    tomile: (km) => km / 1.609344, tokm: (mi) => mi * 1.609344,
+    toin: (cm) => cm / 2.54, tocm: (inch) => inch * 2.54,
+    togal: (l) => l / 3.785411784, tol: (gal) => gal * 3.785411784,
+  };
+  /** Prime factorisation of a positive integer up to 2^53: [[p, e], ...] */
+  function factorInt(n) {
+    n = Math.abs(Math.round(n)); if (!isFinite(n) || n < 2 || n > 9007199254740991) ERR('Math ERROR');
+    const out = []; for (const p of [2, 3, 5]) { let e = 0; while (n % p === 0) { n /= p; e++; } if (e) out.push([p, e]); }
+    for (let p = 7, i = 0, inc = [4, 2, 4, 2, 4, 6, 2, 6]; p * p <= n; p += inc[i], i = (i + 1) % 8) { let e = 0; while (n % p === 0) { n /= p; e++; } if (e) out.push([p, e]); }
+    if (n > 1) out.push([n, 1]); return out;
+  }
+  /** Bond price per 100 (12C convention: semi-annual coupons, actual/actual). yld and cpn in % per year, dates as ms (UTC). */
+  function bondPrice(yld, cpn, settle, mat) {
+    if (!(mat > settle)) ERR('Error 8');
+    const addM = (t, m) => { const d = new Date(t); const day = d.getUTCDate(); d.setUTCDate(1); d.setUTCMonth(d.getUTCMonth() + m); const last = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth() + 1, 0)).getUTCDate(); d.setUTCDate(Math.min(day, last)); return d.getTime(); };
+    let k = 0, next = mat; while (addM(mat, -6 * (k + 1)) > settle) k++; next = addM(mat, -6 * k); const prev = addM(next, -6);
+    const E2 = (next - prev) / 864e5, DSC = (next - settle) / 864e5, A = E2 - DSC, N = k + 1, r = yld / 200, c = cpn / 2;
+    let pv = 0; for (let j = 1; j <= N; j++) pv += c / Math.pow(1 + r, j - 1 + DSC / E2);
+    pv += 100 / Math.pow(1 + r, N - 1 + DSC / E2);
+    const accr = c * A / E2; return { price: pv - accr, accrued: accr };
+  }
+  function bondYield(price, cpn, settle, mat) {
+    let lo = -0.99 * 200, hi = 1000; const f = (y) => bondPrice(y, cpn, settle, mat).price - price;
+    let flo = f(lo), fhi = f(hi); if (flo * fhi > 0) ERR('Error 5');
+    for (let i = 0; i < 200; i++) { const m = (lo + hi) / 2, fm = f(m); if (Math.abs(fm) < 1e-12) return m; if (flo * fm < 0) { hi = m; fhi = fm; } else { lo = m; flo = fm; } }
+    return (lo + hi) / 2;
+  }
+
+  return { HINT, CalcError, tokenize, parse, evaluate, evalNode, makeEnv, formatNumber, fmtPlain, fmtComplex, toFraction, exactForm, integrate, derivative, solve, polyRoots, solveLinear, stats, regression, tvmSolve, tvmEq, npv, irr, amort, csm, toBase, fromBase, toDMS, round15, isNum, isCx, isMat, toMat, math, FUNCS, trimZeros, gcd, groupDigits, UNIT_CONV, factorInt, bondPrice, bondYield };
 });
